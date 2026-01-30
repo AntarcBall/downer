@@ -1,0 +1,107 @@
+{
+    "levels": [
+        {
+            "id": 1,
+            "name": "Tutorial",
+            "platforms": [
+                {
+                    "y": -2.0,
+                    "gapStart": 0,
+                    "gapEnd": 90,
+                    "isTrap": false,
+                    "isMoving": false,
+                    "color": "0x0f3460"
+                },
+                {
+                    "y": -3.5,
+                    "gapStart": 180,
+                    "gapEnd": 270,
+                    "isTrap": false,
+                    "isMoving": false,
+                    "color": "0x0f3460"
+                },
+                {
+                    "y": -5.0,
+                    "gapStart": 90,
+                    "gapEnd": 180,
+                    "isTrap": false,
+                    "isMoving": true,
+                    "color": "0x7b2cbf"
+                },
+                {
+                    "y": -6.5,
+                    "gapStart": 270,
+                    "gapEnd": 360,
+                    "isTrap": false,
+                    "isMoving": false,
+                    "color": "0x0f3460"
+                },
+                {
+                    "y": -8.0,
+                    "gapStart": 45,
+                    "gapEnd": 135,
+                    "isTrap": false,
+                    "isMoving": false,
+                    "color": "0x0f3460"
+                },
+                {
+                    "y": -9.5,
+                    "gapStart": 200,
+                    "gapEnd": 290,
+                    "isTrap": true,
+                    "isMoving": false,
+                    "color": "0x6b0000"
+                },
+                {
+                    "y": -11.0,
+                    "gapStart": 315,
+                    "gapEnd": 45,
+                    "isTrap": false,
+                    "isMoving": true,
+                    "color": "0x7b2cbf"
+                },
+                {
+                    "y": -12.5,
+                    "gapStart": 120,
+                    "gapEnd": 210,
+                    "isTrap": false,
+                    "isMoving": false,
+                    "color": "0x0f3460"
+                },
+                {
+                    "y": -14.0,
+                    "gapStart": 0,
+                    "gapEnd": 90,
+                    "isTrap": false,
+                    "isMoving": false,
+                    "color": "0x0f3460"
+                },
+                {
+                    "y": -15.5,
+                    "gapStart": 180,
+                    "gapEnd": 270,
+                    "isTrap": true,
+                    "isMoving": false,
+                    "color": "0x6b0000"
+                },
+                {
+                    "y": -17.0,
+                    "gapStart": 60,
+                    "gapEnd": 150,
+                    "isTrap": false,
+                    "isMoving": true,
+                    "color": "0x7b2cbf"
+                },
+                {
+                    "y": -18.5,
+                    "gapStart": 240,
+                    "gapEnd": 330,
+                    "isTrap": false,
+                    "isMoving": false,
+                    "color": "0x0f3460"
+                }
+            ],
+            "finishY": -20.0
+        }
+    ]
+}
