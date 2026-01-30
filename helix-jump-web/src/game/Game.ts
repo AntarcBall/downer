@@ -3,7 +3,13 @@ import { Ball } from './Ball';
 import { Tower } from './Tower';
 import { CollisionSystem } from './CollisionSystem';
 import { PlatformGenerator } from './PlatformGenerator';
-import { ScoreUI } from '../ui/ScoreUI';
+import { AIController } from './AIController';
+
+export interface GameOptions {
+    isAI?: boolean;
+    scoreElementId?: string;
+    gameOverElementId?: string;
+}
 
 export class Game {
     private scene: THREE.Scene;
@@ -13,7 +19,7 @@ export class Game {
     private tower: Tower;
     private collisionSystem: CollisionSystem;
     private platformGenerator: PlatformGenerator;
-    private scoreUI: ScoreUI;
+    private aiController: AIController | null = null;
 
     private isQPressed: boolean = false;
     private isEPressed: boolean = false;
@@ -21,25 +27,29 @@ export class Game {
 
     private score: number = 0;
     private isGameOver: boolean = false;
-    private passedPlatformYs: Set<number> = new Set(); // Y 좌표로 추적
+    private passedPlatformYs: Set<number> = new Set();
 
-    constructor(canvas: HTMLCanvasElement) {
+    private isAI: boolean;
+    private scoreElementId: string;
+    private gameOverElementId: string;
+
+    constructor(canvas: HTMLCanvasElement, options: GameOptions = {}) {
+        this.isAI = options.isAI || false;
+        this.scoreElementId = options.scoreElementId || 'score-value';
+        this.gameOverElementId = options.gameOverElementId || 'game-over-ui';
+
         // Scene 설정
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0xf0f2f5);
-        this.scene.fog = new THREE.Fog(0xf0f2f5, 15, 40); // 안개 거리 늘림
+        this.scene.fog = new THREE.Fog(0xf0f2f5, 15, 40);
 
-        // 캔버스 크기 (5:3 비율)
-        const container = canvas.parentElement!;
-        const maxWidth = Math.min(window.innerWidth * 0.95, 1000);
-        const width = maxWidth;
-        const height = width * (3 / 5);
+        // 캔버스 크기는 CSS로 제어
+        const rect = canvas.getBoundingClientRect();
+        const width = rect.width || 400;
+        const height = rect.height || 240;
 
-        container.style.width = `${width}px`;
-        container.style.height = `${height}px`;
-
-        // Camera 설정 - 정면에서 보기
-        this.camera = new THREE.PerspectiveCamera(60, 5 / 3, 0.1, 1000);
+        // Camera 설정
+        this.camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
         this.camera.position.set(0, 2, 12);
         this.camera.lookAt(0, -3, 0);
 
@@ -59,16 +69,22 @@ export class Game {
         this.tower = new Tower(this.scene);
         this.collisionSystem = new CollisionSystem();
         this.platformGenerator = new PlatformGenerator(this.scene, this.tower.group);
-        this.scoreUI = new ScoreUI();
+
+        // AI 모드인 경우 AI 컨트롤러 생성
+        if (this.isAI) {
+            this.aiController = new AIController(this.rotationSpeed);
+        }
 
         // 초기 플랫폼 생성
         this.platformGenerator.generatePlatforms(this.ball.y, this.score);
 
-        // 입력 이벤트 설정
-        this.setupInputEvents();
+        // 입력 이벤트 설정 (AI가 아닌 경우에만)
+        if (!this.isAI) {
+            this.setupInputEvents();
+        }
 
-        // 리사이즈 핸들러
-        window.addEventListener('resize', () => this.onResize());
+        // 점수 초기화
+        this.updateScoreDisplay();
     }
 
     private setupLights(): void {
@@ -109,35 +125,37 @@ export class Game {
         });
     }
 
-    private onResize(): void {
-        const container = this.renderer.domElement.parentElement!;
-        const maxWidth = Math.min(window.innerWidth * 0.95, 1000);
-        const width = maxWidth;
-        const height = width * (3 / 5);
-
-        container.style.width = `${width}px`;
-        container.style.height = `${height}px`;
-
-        this.renderer.setSize(width, height);
-        this.camera.aspect = 5 / 3;
-        this.camera.updateProjectionMatrix();
+    private updateScoreDisplay(): void {
+        const scoreElement = document.getElementById(this.scoreElementId);
+        if (scoreElement) {
+            scoreElement.textContent = String(this.score);
+        }
     }
 
     update(): void {
         if (this.isGameOver) return;
 
-        // 타워 회전 (키보드 입력)
-        if (this.isQPressed) {
-            this.tower.rotate(this.rotationSpeed);
-        }
-        if (this.isEPressed) {
-            this.tower.rotate(-this.rotationSpeed);
+        // 플랫폼 목록 가져오기
+        const platforms = this.platformGenerator.getPlatforms();
+
+        // 타워 회전
+        if (this.isAI && this.aiController) {
+            // AI 제어
+            this.aiController.update(this.ball, this.tower, platforms);
+        } else {
+            // 키보드 입력
+            if (this.isQPressed) {
+                this.tower.rotate(this.rotationSpeed);
+            }
+            if (this.isEPressed) {
+                this.tower.rotate(-this.rotationSpeed);
+            }
         }
 
         // 공 업데이트
         this.ball.update();
 
-        // 플랫폼 생성 및 정리 (무한 생성)
+        // 플랫폼 생성 및 정리
         this.platformGenerator.generatePlatforms(this.ball.y, this.score);
         this.platformGenerator.cleanupPlatforms(this.ball.y);
         this.platformGenerator.updatePlatforms();
@@ -148,8 +166,7 @@ export class Game {
         // 카메라 따라가기
         this.updateCamera();
 
-        // 충돌 검사 (플랫폼 목록을 전달)
-        const platforms = this.platformGenerator.getPlatforms();
+        // 충돌 검사
         const collision = this.collisionSystem.checkCollisionWithPlatforms(
             this.ball,
             this.tower,
@@ -159,13 +176,12 @@ export class Game {
         switch (collision.type) {
             case 'bounce':
                 this.ball.bounce();
-                // 점수 추가 (플랫폼 통과)
                 if (collision.platform) {
                     const platformY = collision.platform.y;
                     if (!this.passedPlatformYs.has(platformY)) {
                         this.passedPlatformYs.add(platformY);
                         this.score += 5;
-                        this.scoreUI.setScore(this.score);
+                        this.updateScoreDisplay();
                     }
                 }
                 break;
@@ -177,7 +193,6 @@ export class Game {
                 break;
 
             case 'pass':
-                // 구멍 통과 - 아무것도 안 함
                 break;
         }
     }
@@ -189,13 +204,13 @@ export class Game {
     }
 
     private showGameOver(): void {
-        const gameOverUI = document.getElementById('game-over-ui');
-        const finalScore = document.getElementById('final-score');
+        const gameOverUI = document.getElementById(this.gameOverElementId);
         if (gameOverUI) {
+            const finalScoreEl = gameOverUI.querySelector('#final-score, .final-score');
+            if (finalScoreEl) {
+                finalScoreEl.textContent = `점수: ${this.score}`;
+            }
             gameOverUI.style.display = 'block';
-        }
-        if (finalScore) {
-            finalScore.textContent = `점수: ${this.score}`;
         }
     }
 
@@ -203,12 +218,11 @@ export class Game {
         this.renderer.render(this.scene, this.camera);
     }
 
-    start(): void {
-        const animate = () => {
-            requestAnimationFrame(animate);
-            this.update();
-            this.render();
-        };
-        animate();
+    getScore(): number {
+        return this.score;
+    }
+
+    isOver(): boolean {
+        return this.isGameOver;
     }
 }

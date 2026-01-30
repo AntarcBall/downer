@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Helix Jump</title>
+  <title>Helix Jump - Human vs AI</title>
   <style>
     * {
       margin: 0;
@@ -22,53 +22,70 @@
       overflow: hidden;
     }
 
-    #game-container {
-      position: relative;
-      /* 가로 5 : 세로 3 비율 */
-      aspect-ratio: 5 / 3;
-      max-width: 100vw;
-      max-height: 100vh;
+    #main-container {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
     }
 
-    #game-canvas {
+    .game-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 10px 15px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px 8px 0 0;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .player-label {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .player-label.human {
+      color: #4CAF50;
+    }
+
+    .player-label.ai {
+      color: #2196F3;
+    }
+
+    .score-display {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ff4757;
+    }
+
+    .game-container {
+      position: relative;
+      width: 400px;
+      height: 500px;
+    }
+
+    .game-canvas {
       width: 100%;
       height: 100%;
       display: block;
-      border-radius: 8px;
+      border-radius: 0 0 8px 8px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
     }
 
-    #score-ui {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      color: #333;
-      font-size: 24px;
-      font-weight: bold;
-      z-index: 100;
-    }
-
-    #score-label {
-      font-size: 14px;
-      color: #777;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-
-    #score-value {
-      font-size: 48px;
-      color: #ff4757;
-      transition: transform 0.1s ease;
-    }
-
-    #game-over-ui,
-    #win-ui {
+    .game-over-overlay {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(255, 255, 255, 0.9);
-      padding: 40px 60px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px 40px;
       border-radius: 16px;
       text-align: center;
       display: none;
@@ -76,25 +93,25 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     }
 
-    #game-over-ui h2 {
+    .game-over-overlay h2 {
       color: #e94560;
-      font-size: 36px;
-      margin-bottom: 20px;
+      font-size: 28px;
+      margin-bottom: 10px;
     }
 
-    #win-ui h2 {
-      color: #4CAF50;
-      font-size: 36px;
-      margin-bottom: 20px;
+    .game-over-overlay .final-score {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 15px;
     }
 
     .restart-btn {
       background: linear-gradient(135deg, #ff4757, #ff6b81);
       border: none;
       color: white;
-      padding: 15px 40px;
-      font-size: 18px;
-      border-radius: 30px;
+      padding: 12px 30px;
+      font-size: 16px;
+      border-radius: 25px;
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s;
     }
@@ -103,22 +120,64 @@
       transform: scale(1.05);
       box-shadow: 0 5px 20px rgba(255, 71, 87, 0.4);
     }
+
+    .controls-info {
+      margin-top: 20px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .controls-info kbd {
+      background: #333;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      margin: 0 2px;
+    }
   </style>
 </head>
 
 <body>
-  <div id="game-container">
-    <canvas id="game-canvas"></canvas>
-    <div id="score-ui">
-      <div id="score-label">Score</div>
-      <div id="score-value">0</div>
+  <div id="main-container">
+    <!-- 왼쪽: 사람 플레이어 -->
+    <div class="game-wrapper">
+      <div class="game-header">
+        <span class="player-label human">👤 HUMAN</span>
+        <span class="score-display" id="human-score">0</span>
+      </div>
+      <div class="game-container">
+        <canvas id="human-canvas" class="game-canvas"></canvas>
+        <div class="game-over-overlay" id="human-game-over">
+          <h2>GAME OVER</h2>
+          <p class="final-score">점수: 0</p>
+          <button class="restart-btn" onclick="location.reload()">다시 시작</button>
+        </div>
+      </div>
     </div>
-    <div id="game-over-ui">
-      <h2>GAME OVER</h2>
-      <p id="final-score">점수: 0</p>
-      <button class="restart-btn" onclick="location.reload()">다시 시작</button>
+
+    <!-- 오른쪽: AI 플레이어 -->
+    <div class="game-wrapper">
+      <div class="game-header">
+        <span class="player-label ai">🤖 AI</span>
+        <span class="score-display" id="ai-score">0</span>
+      </div>
+      <div class="game-container">
+        <canvas id="ai-canvas" class="game-canvas"></canvas>
+        <div class="game-over-overlay" id="ai-game-over">
+          <h2>GAME OVER</h2>
+          <p class="final-score">점수: 0</p>
+          <button class="restart-btn" onclick="location.reload()">다시 시작</button>
+        </div>
+      </div>
     </div>
   </div>
+
+  <div class="controls-info">
+    조작: <kbd>Q</kbd> 왼쪽 회전 / <kbd>E</kbd> 오른쪽 회전
+  </div>
+
   <script type="module" src="/src/main.ts"></script>
 </body>
 
