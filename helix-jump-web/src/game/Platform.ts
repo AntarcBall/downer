@@ -47,32 +47,13 @@ export class Platform {
         const gapStartRad = THREE.MathUtils.degToRad(this.gapStart);
         const gapEndRad = THREE.MathUtils.degToRad(this.gapEnd);
 
-        // 구멍 범위 계산
-        let gapSize = this.gapEnd - this.gapStart;
-        if (gapSize < 0) gapSize += 360;
-
         // 구멍이 아닌 부분 생성
         const solidStartRad = gapEndRad;
         const solidEndRad = gapStartRad + Math.PI * 2;
         const solidAngle = solidEndRad - solidStartRad;
 
         if (solidAngle > 0.1) {
-            const geometry = new THREE.RingGeometry(
-                this.innerRadius,
-                this.outerRadius,
-                32,
-                1,
-                solidStartRad,
-                solidAngle > Math.PI * 2 ? Math.PI * 2 - 0.1 : solidAngle
-            );
-
-            // 링을 3D 원통형으로 만들기
-            const extrudeSettings = {
-                depth: this.height,
-                bevelEnabled: false,
-            };
-
-            // 간단히 CylinderGeometry로 링 생성
+            // 링을 CylinderGeometry로 생성
             const ringGeometry = new THREE.CylinderGeometry(
                 this.outerRadius,
                 this.outerRadius,

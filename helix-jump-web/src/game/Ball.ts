@@ -1,11 +1,5 @@
 import * as THREE from 'three';
 
-export interface BallState {
-    y: number;
-    velocityY: number;
-    isAlive: boolean;
-}
-
 export class Ball {
     public mesh: THREE.Mesh;
     public y: number = 0;
