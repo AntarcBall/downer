@@ -195,6 +195,9 @@ export class Game {
             case 'pass':
                 break;
         }
+
+        // 배경색 부드러운 전환
+        this.updateBackgroundColor();
     }
 
     private updateCamera(): void {
@@ -239,5 +242,22 @@ export class Game {
 
     isOver(): boolean {
         return this.isGameOver;
+    }
+
+    private currentBgColor: THREE.Color = new THREE.Color(0xf0f2f5);
+    private targetBgColor: THREE.Color = new THREE.Color(0xf0f2f5);
+
+    setTargetBackgroundColor(r: number, g: number, b: number): void {
+        this.targetBgColor.setRGB(r, g, b);
+    }
+
+    private updateBackgroundColor(): void {
+        const lerpFactor = 0.05; // 부드러운 전환 속도
+        this.currentBgColor.lerp(this.targetBgColor, lerpFactor);
+
+        this.scene.background = this.currentBgColor;
+        if (this.scene.fog) {
+            this.scene.fog.color.copy(this.currentBgColor);
+        }
     }
 }
