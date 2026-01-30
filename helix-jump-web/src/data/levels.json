@@ -10,98 +10,98 @@
                     "gapEnd": 90,
                     "isTrap": false,
                     "isMoving": false,
-                    "color": "0x0f3460"
+                    "color": "0xffffff"
                 },
                 {
-                    "y": -3.5,
+                    "y": -3.95,
                     "gapStart": 180,
                     "gapEnd": 270,
                     "isTrap": false,
                     "isMoving": false,
-                    "color": "0x0f3460"
+                    "color": "0xffffff"
                 },
                 {
-                    "y": -5.0,
+                    "y": -5.9,
                     "gapStart": 90,
                     "gapEnd": 180,
                     "isTrap": false,
                     "isMoving": true,
-                    "color": "0x7b2cbf"
+                    "color": "0xce93d8"
                 },
                 {
-                    "y": -6.5,
+                    "y": -7.85,
                     "gapStart": 270,
                     "gapEnd": 360,
                     "isTrap": false,
                     "isMoving": false,
-                    "color": "0x0f3460"
+                    "color": "0xffffff"
                 },
                 {
-                    "y": -8.0,
+                    "y": -9.8,
                     "gapStart": 45,
                     "gapEnd": 135,
                     "isTrap": false,
                     "isMoving": false,
-                    "color": "0x0f3460"
+                    "color": "0xffffff"
                 },
                 {
-                    "y": -9.5,
+                    "y": -11.75,
                     "gapStart": 200,
                     "gapEnd": 290,
                     "isTrap": true,
                     "isMoving": false,
-                    "color": "0x6b0000"
+                    "color": "0xef9a9a"
                 },
                 {
-                    "y": -11.0,
+                    "y": -13.7,
                     "gapStart": 315,
                     "gapEnd": 45,
                     "isTrap": false,
                     "isMoving": true,
-                    "color": "0x7b2cbf"
+                    "color": "0xce93d8"
                 },
                 {
-                    "y": -12.5,
+                    "y": -15.65,
                     "gapStart": 120,
                     "gapEnd": 210,
                     "isTrap": false,
                     "isMoving": false,
-                    "color": "0x0f3460"
+                    "color": "0xffffff"
                 },
                 {
-                    "y": -14.0,
+                    "y": -17.6,
                     "gapStart": 0,
                     "gapEnd": 90,
                     "isTrap": false,
                     "isMoving": false,
-                    "color": "0x0f3460"
+                    "color": "0xffffff"
                 },
                 {
-                    "y": -15.5,
+                    "y": -19.55,
                     "gapStart": 180,
                     "gapEnd": 270,
                     "isTrap": true,
                     "isMoving": false,
-                    "color": "0x6b0000"
+                    "color": "0xef9a9a"
                 },
                 {
-                    "y": -17.0,
+                    "y": -21.5,
                     "gapStart": 60,
                     "gapEnd": 150,
                     "isTrap": false,
                     "isMoving": true,
-                    "color": "0x7b2cbf"
+                    "color": "0xce93d8"
                 },
                 {
-                    "y": -18.5,
+                    "y": -23.45,
                     "gapStart": 240,
                     "gapEnd": 330,
                     "isTrap": false,
                     "isMoving": false,
-                    "color": "0x0f3460"
+                    "color": "0xffffff"
                 }
             ],
-            "finishY": -20.0
+            "finishY": -26.0
         }
     ]
 }

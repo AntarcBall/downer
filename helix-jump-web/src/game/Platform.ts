@@ -47,10 +47,15 @@ export class Platform {
         const gapStartRad = THREE.MathUtils.degToRad(this.gapStart);
         const gapEndRad = THREE.MathUtils.degToRad(this.gapEnd);
 
-        // 구멍이 아닌 부분 생성
+        // 구멍 크기 계산 (라디안)
+        let gapSizeRad = gapEndRad - gapStartRad;
+        if (gapSizeRad < 0) gapSizeRad += Math.PI * 2;
+
+        // 채워진 부분의 각도
+        const solidAngle = Math.PI * 2 - gapSizeRad;
+
+        // 렌더링 시작 각도 (구멍이 끝나는 지점부터 시작)
         const solidStartRad = gapEndRad;
-        const solidEndRad = gapStartRad + Math.PI * 2;
-        const solidAngle = solidEndRad - solidStartRad;
 
         if (solidAngle > 0.1) {
             // 링을 CylinderGeometry로 생성
@@ -62,9 +67,8 @@ export class Platform {
                 1,
                 true,
                 solidStartRad,
-                solidAngle > Math.PI * 2 ? Math.PI * 2 - 0.1 : solidAngle
+                solidAngle
             );
-
             // 내부 원통
             const innerGeometry = new THREE.CylinderGeometry(
                 this.innerRadius,
@@ -74,7 +78,7 @@ export class Platform {
                 1,
                 true,
                 solidStartRad,
-                solidAngle > Math.PI * 2 ? Math.PI * 2 - 0.1 : solidAngle
+                solidAngle
             );
 
             const material = new THREE.MeshStandardMaterial({
@@ -91,7 +95,7 @@ export class Platform {
                 64,
                 1,
                 solidStartRad,
-                solidAngle > Math.PI * 2 ? Math.PI * 2 - 0.1 : solidAngle
+                solidAngle
             );
             topGeometry.rotateX(-Math.PI / 2);
 

@@ -13,14 +13,16 @@ export class Ball {
     constructor(scene: THREE.Scene) {
         const geometry = new THREE.SphereGeometry(this.radius, 32, 32);
         const material = new THREE.MeshStandardMaterial({
-            color: 0xe94560,
-            metalness: 0.3,
-            roughness: 0.4,
+            color: 0xff4757, // 밝은 빨강
+            metalness: 0.1,
+            roughness: 0.2,
+            emissive: 0x330000,
+            emissiveIntensity: 0.2
         });
 
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.castShadow = true;
-        this.mesh.position.set(0, this.y, 0);
+        this.mesh.position.set(0, this.y, 1.5); // 기둥 밖으로 위치 조정 (z=1.5)
 
         scene.add(this.mesh);
     }
@@ -34,6 +36,7 @@ export class Ball {
 
         // 메시 위치 업데이트
         this.mesh.position.y = this.y;
+        this.mesh.position.z = 1.5; // z 위치 고정
     }
 
     bounce(): void {
@@ -53,6 +56,6 @@ export class Ball {
         this.y = 0;
         this.velocityY = 0;
         this.isAlive = true;
-        this.mesh.position.y = this.y;
+        this.mesh.position.set(0, this.y, 1.5);
     }
 }

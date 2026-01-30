@@ -22,9 +22,9 @@ export class Tower {
             32
         );
         const pillarMaterial = new THREE.MeshStandardMaterial({
-            color: 0x16213e,
-            metalness: 0.3,
-            roughness: 0.7,
+            color: 0xd1d8e0, // 밝은 회색 기둥
+            metalness: 0.1,
+            roughness: 0.8,
         });
 
         this.pillarMesh = new THREE.Mesh(pillarGeometry, pillarMaterial);

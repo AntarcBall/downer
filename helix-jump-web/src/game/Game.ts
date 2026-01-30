@@ -26,7 +26,8 @@ export class Game {
     constructor(canvas: HTMLCanvasElement) {
         // Scene 설정
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x1a1a2e);
+        this.scene.background = new THREE.Color(0xf0f2f5); // 밝은 배경
+        this.scene.fog = new THREE.Fog(0xf0f2f5, 10, 25); // 안개 효과 추가
 
         // 캔버스 크기 (5:3 비율)
         const container = canvas.parentElement!;
@@ -39,8 +40,8 @@ export class Game {
 
         // Camera 설정
         this.camera = new THREE.PerspectiveCamera(60, 5 / 3, 0.1, 1000);
-        this.camera.position.set(0, 2, 8);
-        this.camera.lookAt(0, -5, 0);
+        this.camera.position.set(0, 4.5, 5.5); // 카메라 각도 조정 (더 수직으로)
+        this.camera.lookAt(0, -1.5, 0);
 
         // Renderer 설정
         this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -48,6 +49,7 @@ export class Game {
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping; // 톤 매핑 추가
 
         // 조명
         this.setupLights();
@@ -70,21 +72,23 @@ export class Game {
 
     private setupLights(): void {
         // Ambient light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         this.scene.add(ambientLight);
 
         // Directional light (main)
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
         directionalLight.position.set(5, 10, 5);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 50;
         this.scene.add(directionalLight);
 
-        // Point light (accent)
-        const pointLight = new THREE.PointLight(0xe94560, 0.5, 20);
-        pointLight.position.set(0, 5, 3);
-        this.scene.add(pointLight);
+        // Fill light
+        const fillLight = new THREE.DirectionalLight(0xebf4ff, 0.5);
+        fillLight.position.set(-5, 5, 2);
+        this.scene.add(fillLight);
     }
 
     private loadLevel(levelIndex: number): void {
