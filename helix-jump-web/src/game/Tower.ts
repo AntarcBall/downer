@@ -1,69 +1,35 @@
 import * as THREE from 'three';
-import { Platform, PlatformData } from './Platform';
 
 export class Tower {
     public group: THREE.Group;
-    public platforms: Platform[] = [];
     public rotation: number = 0;
 
     private readonly pillarRadius: number = 0.4;
     private pillarMesh: THREE.Mesh;
-    private finishPlatform: THREE.Mesh;
-    public finishY: number = -20;
 
     constructor(scene: THREE.Scene) {
         this.group = new THREE.Group();
 
-        // 중앙 기둥 생성
+        // 중앙 기둥 생성 (매우 긴 기둥)
         const pillarGeometry = new THREE.CylinderGeometry(
             this.pillarRadius,
             this.pillarRadius,
-            30,
+            500, // 매우 긴 기둥
             32
         );
         const pillarMaterial = new THREE.MeshStandardMaterial({
-            color: 0xd1d8e0, // 밝은 회색 기둥
+            color: 0xd1d8e0,
             metalness: 0.1,
             roughness: 0.8,
         });
 
         this.pillarMesh = new THREE.Mesh(pillarGeometry, pillarMaterial);
-        this.pillarMesh.position.y = -10;
+        this.pillarMesh.position.y = -200; // 중심을 아래로
         this.pillarMesh.castShadow = true;
         this.pillarMesh.receiveShadow = true;
         this.group.add(this.pillarMesh);
 
-        // 피니시 플랫폼 (바닥)
-        const finishGeometry = new THREE.CylinderGeometry(2.5, 2.5, 0.3, 32);
-        const finishMaterial = new THREE.MeshStandardMaterial({
-            color: 0x4CAF50,
-            metalness: 0.4,
-            roughness: 0.5,
-        });
-        this.finishPlatform = new THREE.Mesh(finishGeometry, finishMaterial);
-        this.finishPlatform.position.y = this.finishY;
-        this.group.add(this.finishPlatform);
-
         scene.add(this.group);
-    }
-
-    loadLevel(platformsData: PlatformData[], finishY: number, scene: THREE.Scene): void {
-        // 기존 플랫폼 제거
-        this.platforms.forEach(p => {
-            this.group.remove(p.mesh);
-        });
-        this.platforms = [];
-
-        // 새 플랫폼 추가
-        platformsData.forEach(data => {
-            const platform = new Platform(data, scene);
-            this.group.add(platform.mesh);
-            this.platforms.push(platform);
-        });
-
-        // 피니시 라인 업데이트
-        this.finishY = finishY;
-        this.finishPlatform.position.y = finishY;
     }
 
     rotate(delta: number): void {
@@ -76,14 +42,13 @@ export class Tower {
         this.group.rotation.y = this.rotation;
     }
 
-    update(): void {
-        // 움직이는 플랫폼 업데이트
-        this.platforms.forEach(platform => {
-            platform.update();
-        });
-    }
-
     getRotationDegrees(): number {
         return THREE.MathUtils.radToDeg(this.rotation) % 360;
     }
+
+    // 기둥 위치 업데이트 (공을 따라감)
+    updatePillarPosition(ballY: number): void {
+        this.pillarMesh.position.y = ballY - 200;
+    }
 }
+

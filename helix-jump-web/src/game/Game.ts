@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { Ball } from './Ball';
 import { Tower } from './Tower';
 import { CollisionSystem } from './CollisionSystem';
+import { PlatformGenerator } from './PlatformGenerator';
 import { ScoreUI } from '../ui/ScoreUI';
-import levelsData from '../data/levels.json';
 
 export class Game {
     private scene: THREE.Scene;
@@ -12,6 +12,7 @@ export class Game {
     private ball: Ball;
     private tower: Tower;
     private collisionSystem: CollisionSystem;
+    private platformGenerator: PlatformGenerator;
     private scoreUI: ScoreUI;
 
     private isQPressed: boolean = false;
@@ -20,14 +21,13 @@ export class Game {
 
     private score: number = 0;
     private isGameOver: boolean = false;
-    private isWin: boolean = false;
-    private passedPlatforms: Set<number> = new Set();
+    private passedPlatformYs: Set<number> = new Set(); // Y 좌표로 추적
 
     constructor(canvas: HTMLCanvasElement) {
         // Scene 설정
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0xf0f2f5); // 밝은 배경
-        this.scene.fog = new THREE.Fog(0xf0f2f5, 10, 25); // 안개 효과 추가
+        this.scene.background = new THREE.Color(0xf0f2f5);
+        this.scene.fog = new THREE.Fog(0xf0f2f5, 15, 40); // 안개 거리 늘림
 
         // 캔버스 크기 (5:3 비율)
         const container = canvas.parentElement!;
@@ -40,8 +40,8 @@ export class Game {
 
         // Camera 설정 - 정면에서 보기
         this.camera = new THREE.PerspectiveCamera(60, 5 / 3, 0.1, 1000);
-        this.camera.position.set(0, 2, 12); // 약간 위에서 정면으로
-        this.camera.lookAt(0, -3, 0); // 약간 아래를 봄
+        this.camera.position.set(0, 2, 12);
+        this.camera.lookAt(0, -3, 0);
 
         // Renderer 설정
         this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -49,7 +49,7 @@ export class Game {
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping; // 톤 매핑 추가
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
         // 조명
         this.setupLights();
@@ -58,24 +58,23 @@ export class Game {
         this.ball = new Ball(this.scene);
         this.tower = new Tower(this.scene);
         this.collisionSystem = new CollisionSystem();
+        this.platformGenerator = new PlatformGenerator(this.scene, this.tower.group);
         this.scoreUI = new ScoreUI();
 
-        // 레벨 로드
-        this.loadLevel(0);
+        // 초기 플랫폼 생성
+        this.platformGenerator.generatePlatforms(this.ball.y, this.score);
 
         // 입력 이벤트 설정
-        this.setupInputEvents(canvas);
+        this.setupInputEvents();
 
         // 리사이즈 핸들러
         window.addEventListener('resize', () => this.onResize());
     }
 
     private setupLights(): void {
-        // Ambient light
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         this.scene.add(ambientLight);
 
-        // Directional light (main)
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
         directionalLight.position.set(5, 10, 5);
         directionalLight.castShadow = true;
@@ -85,26 +84,14 @@ export class Game {
         directionalLight.shadow.camera.far = 50;
         this.scene.add(directionalLight);
 
-        // Fill light
         const fillLight = new THREE.DirectionalLight(0xebf4ff, 0.5);
         fillLight.position.set(-5, 5, 2);
         this.scene.add(fillLight);
     }
 
-    private loadLevel(levelIndex: number): void {
-        const level = levelsData.levels[levelIndex];
-        if (!level) return;
-
-        this.tower.loadLevel(level.platforms, level.finishY, this.scene);
-        this.passedPlatforms.clear();
-    }
-
-
-
-    private setupInputEvents(canvas: HTMLCanvasElement): void {
-        // Keyboard events
+    private setupInputEvents(): void {
         window.addEventListener('keydown', (e) => {
-            if (this.isGameOver || this.isWin) return;
+            if (this.isGameOver) return;
 
             if (e.key.toLowerCase() === 'q') {
                 this.isQPressed = true;
@@ -137,7 +124,7 @@ export class Game {
     }
 
     update(): void {
-        if (this.isGameOver || this.isWin) return;
+        if (this.isGameOver) return;
 
         // 타워 회전 (키보드 입력)
         if (this.isQPressed) {
@@ -150,23 +137,33 @@ export class Game {
         // 공 업데이트
         this.ball.update();
 
-        // 타워 업데이트 (움직이는 플랫폼)
-        this.tower.update();
+        // 플랫폼 생성 및 정리 (무한 생성)
+        this.platformGenerator.generatePlatforms(this.ball.y, this.score);
+        this.platformGenerator.cleanupPlatforms(this.ball.y);
+        this.platformGenerator.updatePlatforms();
+
+        // 기둥 위치 업데이트
+        this.tower.updatePillarPosition(this.ball.y);
 
         // 카메라 따라가기
         this.updateCamera();
 
-        // 충돌 검사
-        const collision = this.collisionSystem.checkCollision(this.ball, this.tower);
+        // 충돌 검사 (플랫폼 목록을 전달)
+        const platforms = this.platformGenerator.getPlatforms();
+        const collision = this.collisionSystem.checkCollisionWithPlatforms(
+            this.ball,
+            this.tower,
+            platforms
+        );
 
         switch (collision.type) {
             case 'bounce':
                 this.ball.bounce();
                 // 점수 추가 (플랫폼 통과)
                 if (collision.platform) {
-                    const platformIndex = this.tower.platforms.indexOf(collision.platform);
-                    if (!this.passedPlatforms.has(platformIndex)) {
-                        this.passedPlatforms.add(platformIndex);
+                    const platformY = collision.platform.y;
+                    if (!this.passedPlatformYs.has(platformY)) {
+                        this.passedPlatformYs.add(platformY);
                         this.score += 5;
                         this.scoreUI.setScore(this.score);
                     }
@@ -179,17 +176,13 @@ export class Game {
                 this.showGameOver();
                 break;
 
-            case 'finish':
-                this.isWin = true;
-                this.score += 50;
-                this.scoreUI.setScore(this.score);
-                this.showWin();
+            case 'pass':
+                // 구멍 통과 - 아무것도 안 함
                 break;
         }
     }
 
     private updateCamera(): void {
-        // 카메라가 공을 부드럽게 따라감
         const targetY = this.ball.y + 3;
         this.camera.position.y += (targetY - this.camera.position.y) * 0.05;
         this.camera.lookAt(0, this.ball.y - 2, 0);
@@ -197,15 +190,12 @@ export class Game {
 
     private showGameOver(): void {
         const gameOverUI = document.getElementById('game-over-ui');
+        const finalScore = document.getElementById('final-score');
         if (gameOverUI) {
             gameOverUI.style.display = 'block';
         }
-    }
-
-    private showWin(): void {
-        const winUI = document.getElementById('win-ui');
-        if (winUI) {
-            winUI.style.display = 'block';
+        if (finalScore) {
+            finalScore.textContent = `점수: ${this.score}`;
         }
     }
 
