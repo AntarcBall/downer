@@ -222,6 +222,21 @@ export class Game {
         return this.score;
     }
 
+    forceGameOver(message: string): void {
+        this.isGameOver = true;
+
+        const gameOverUI = document.getElementById(this.gameOverElementId);
+        if (gameOverUI) {
+            const titleEl = gameOverUI.querySelector('h2');
+            const finalScoreEl = gameOverUI.querySelector('#final-score, .final-score');
+
+            if (titleEl) titleEl.textContent = message;
+            if (finalScoreEl) finalScoreEl.textContent = `최종 점수: ${this.score}`;
+
+            gameOverUI.style.display = 'block';
+        }
+    }
+
     isOver(): boolean {
         return this.isGameOver;
     }
