@@ -38,10 +38,10 @@ export class Game {
         container.style.width = `${width}px`;
         container.style.height = `${height}px`;
 
-        // Camera 설정
+        // Camera 설정 - 정면에서 보기
         this.camera = new THREE.PerspectiveCamera(60, 5 / 3, 0.1, 1000);
-        this.camera.position.set(0, 4.5, 5.5); // 카메라 각도 조정 (더 수직으로)
-        this.camera.lookAt(0, -1.5, 0);
+        this.camera.position.set(0, 2, 12); // 약간 위에서 정면으로
+        this.camera.lookAt(0, -3, 0); // 약간 아래를 봄
 
         // Renderer 설정
         this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });

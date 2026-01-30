@@ -46,8 +46,8 @@
                 },
                 {
                     "y": -11.75,
-                    "gapStart": 200,
-                    "gapEnd": 290,
+                    "gapStart": 0,
+                    "gapEnd": 90,
                     "isTrap": true,
                     "isMoving": false,
                     "color": "0xef9a9a"
@@ -78,8 +78,8 @@
                 },
                 {
                     "y": -19.55,
-                    "gapStart": 180,
-                    "gapEnd": 270,
+                    "gapStart": 45,
+                    "gapEnd": 135,
                     "isTrap": true,
                     "isMoving": false,
                     "color": "0xef9a9a"

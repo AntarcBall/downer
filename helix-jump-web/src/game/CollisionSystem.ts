@@ -54,9 +54,10 @@ export class CollisionSystem {
                 const towerRotationDeg = tower.getRotationDegrees();
                 const platformSelfRotationDeg = platform.selfRotation * (180 / Math.PI);
 
-                // 공 위치는 항상 0도 방향 (화면 정면)
-                // 타워 회전에 따라 공이 플랫폼의 어느 부분에 있는지 계산
-                const effectiveAngle = this.normalizeAngle(360 - towerRotationDeg - platformSelfRotationDeg);
+                // 공 위치: (0, y, 1.5) → Z+ 방향 (화면 앞쪽)
+                // Three.js 좌표계상 Z+ 방향은 270도(또는 -90도)에 해당함
+                const ballWorldAngle = 270;
+                const effectiveAngle = this.normalizeAngle(ballWorldAngle - towerRotationDeg - platformSelfRotationDeg);
 
                 // 구멍 범위 체크
                 if (this.isInGap(effectiveAngle, platform.gapStart, platform.gapEnd)) {
