@@ -173,10 +173,91 @@
       font-family: monospace;
       margin: 0 2px;
     }
+
+    /* 시작 화면 스타일 */
+    .start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .start-screen h1 {
+      font-size: 48px;
+      color: #333;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .difficulty-control {
+      margin-bottom: 30px;
+      width: 300px;
+      text-align: center;
+    }
+
+    .difficulty-control label {
+      display: block;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #555;
+    }
+
+    .difficulty-control input[type="range"] {
+      width: 100%;
+      margin-bottom: 5px;
+    }
+
+    .difficulty-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #888;
+    }
+
+    .start-btn {
+      background: linear-gradient(135deg, #2196F3, #21CBF3);
+      border: none;
+      color: white;
+      padding: 15px 40px;
+      font-size: 24px;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+    }
+
+    .start-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(33, 150, 243, 0.4);
+    }
   </style>
 </head>
 
 <body>
+  <!-- 시작 화면 -->
+  <div id="start-screen" class="start-screen">
+    <h1>HELIX JUMP VS</h1>
+    <div class="difficulty-control">
+      <label for="ai-difficulty">AI Difficulty: <span id="difficulty-value">50</span></label>
+      <input type="range" id="ai-difficulty" min="0" max="100" value="50">
+      <div class="difficulty-labels">
+        <span>Easy (Slow)</span>
+        <span>Hard (Fast)</span>
+      </div>
+    </div>
+    <button id="start-btn" class="start-btn">GAME START</button>
+  </div>
+
   <div id="main-container">
     <!-- 왼쪽: 사람 플레이어 -->
     <div class="game-wrapper">

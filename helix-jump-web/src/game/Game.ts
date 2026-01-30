@@ -180,7 +180,7 @@ export class Game {
                     const platformY = collision.platform.y;
                     if (!this.passedPlatformYs.has(platformY)) {
                         this.passedPlatformYs.add(platformY);
-                        this.score += 5;
+                        this.score += 1;
                         this.updateScoreDisplay();
                     }
                 }
@@ -258,6 +258,12 @@ export class Game {
         this.scene.background = this.currentBgColor;
         if (this.scene.fog) {
             this.scene.fog.color.copy(this.currentBgColor);
+        }
+    }
+
+    setAIDifficulty(value: number): void {
+        if (this.aiController) {
+            this.aiController.setDifficulty(value);
         }
     }
 }

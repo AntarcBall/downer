@@ -13,13 +13,39 @@ export class AIController {
         this.rotationSpeed = rotationSpeed;
     }
 
+    private lastTargetPlatform: Platform | null = null;
+    private thinkingEndTime: number = 0;
+    private difficulty: number = 1.0; // 0.0 (Easy) ~ 1.0 (Hard)
+
+    setDifficulty(value: number): void {
+        this.difficulty = Math.max(0.0, Math.min(1.0, value));
+    }
+
     /**
      * AI가 회전 방향을 결정하고 타워를 회전시킴
      */
     update(ball: Ball, tower: Tower, platforms: Platform[]): void {
         // 공 아래에 있는 가장 가까운 플랫폼 찾기
         const nextPlatform = this.findNextPlatform(ball.y, platforms);
+
+        // 목표 플랫폼이 변경됨 (즉, 이전 플랫폼을 통과했거나 게임 시작)
+        if (nextPlatform !== this.lastTargetPlatform) {
+            this.lastTargetPlatform = nextPlatform;
+
+            // 난이도에 따른 고민 시간 부여
+            // difficulty 1.0 -> 0ms (즉시 반응)
+            // difficulty 0.0 -> 1000ms (1초 고민)
+            const maxThinkingTime = 1000;
+            const thinkingDuration = (1.0 - this.difficulty) * maxThinkingTime;
+            this.thinkingEndTime = Date.now() + thinkingDuration;
+        }
+
         if (!nextPlatform) return;
+
+        // 고민 중이면 움직이지 않음
+        if (Date.now() < this.thinkingEndTime) {
+            return;
+        }
 
         // 목표 구멍 중심 각도 계산
         let gapStart = nextPlatform.gapStart;
