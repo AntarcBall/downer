@@ -14,9 +14,9 @@ export class Game {
     private collisionSystem: CollisionSystem;
     private scoreUI: ScoreUI;
 
-    private isDragging: boolean = false;
-    private previousMouseX: number = 0;
-    private rotationSensitivity: number = 0.01;
+    private isQPressed: boolean = false;
+    private isEPressed: boolean = false;
+    private rotationSpeed: number = 0.08;
 
     private score: number = 0;
     private isGameOver: boolean = false;
@@ -99,45 +99,26 @@ export class Game {
         this.passedPlatforms.clear();
     }
 
+
+
     private setupInputEvents(canvas: HTMLCanvasElement): void {
-        // Mouse events
-        canvas.addEventListener('mousedown', (e) => {
-            this.isDragging = true;
-            this.previousMouseX = e.clientX;
+        // Keyboard events
+        window.addEventListener('keydown', (e) => {
+            if (this.isGameOver || this.isWin) return;
+
+            if (e.key.toLowerCase() === 'q') {
+                this.isQPressed = true;
+            } else if (e.key.toLowerCase() === 'e') {
+                this.isEPressed = true;
+            }
         });
 
-        canvas.addEventListener('mousemove', (e) => {
-            if (!this.isDragging || this.isGameOver || this.isWin) return;
-
-            const deltaX = e.clientX - this.previousMouseX;
-            this.tower.rotate(deltaX * this.rotationSensitivity);
-            this.previousMouseX = e.clientX;
-        });
-
-        canvas.addEventListener('mouseup', () => {
-            this.isDragging = false;
-        });
-
-        canvas.addEventListener('mouseleave', () => {
-            this.isDragging = false;
-        });
-
-        // Touch events
-        canvas.addEventListener('touchstart', (e) => {
-            this.isDragging = true;
-            this.previousMouseX = e.touches[0].clientX;
-        });
-
-        canvas.addEventListener('touchmove', (e) => {
-            if (!this.isDragging || this.isGameOver || this.isWin) return;
-
-            const deltaX = e.touches[0].clientX - this.previousMouseX;
-            this.tower.rotate(deltaX * this.rotationSensitivity);
-            this.previousMouseX = e.touches[0].clientX;
-        });
-
-        canvas.addEventListener('touchend', () => {
-            this.isDragging = false;
+        window.addEventListener('keyup', (e) => {
+            if (e.key.toLowerCase() === 'q') {
+                this.isQPressed = false;
+            } else if (e.key.toLowerCase() === 'e') {
+                this.isEPressed = false;
+            }
         });
     }
 
@@ -157,6 +138,14 @@ export class Game {
 
     update(): void {
         if (this.isGameOver || this.isWin) return;
+
+        // 타워 회전 (키보드 입력)
+        if (this.isQPressed) {
+            this.tower.rotate(this.rotationSpeed);
+        }
+        if (this.isEPressed) {
+            this.tower.rotate(-this.rotationSpeed);
+        }
 
         // 공 업데이트
         this.ball.update();
