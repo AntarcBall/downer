@@ -25,6 +25,7 @@ export class Game {
 
     private isQPressed: boolean = false;
     private isEPressed: boolean = false;
+    private inputEventsAttached: boolean = false;
     private rotationSpeed: number = GAME_CONFIG.controls.rotationSpeed;
 
     private score: number = 0;
@@ -34,6 +35,22 @@ export class Game {
     private isAI: boolean;
     private scoreElementId: string;
     private gameOverElementId: string;
+    private readonly onKeyDown = (e: KeyboardEvent): void => {
+        if (this.isGameOver) return;
+
+        if (e.key.toLowerCase() === 'q') {
+            this.isQPressed = true;
+        } else if (e.key.toLowerCase() === 'e') {
+            this.isEPressed = true;
+        }
+    };
+    private readonly onKeyUp = (e: KeyboardEvent): void => {
+        if (e.key.toLowerCase() === 'q') {
+            this.isQPressed = false;
+        } else if (e.key.toLowerCase() === 'e') {
+            this.isEPressed = false;
+        }
+    };
 
     constructor(canvas: HTMLCanvasElement, options: GameOptions = {}) {
         this.isAI = options.isAI || false;
@@ -108,23 +125,11 @@ export class Game {
     }
 
     private setupInputEvents(): void {
-        window.addEventListener('keydown', (e) => {
-            if (this.isGameOver) return;
+        if (this.inputEventsAttached) return;
 
-            if (e.key.toLowerCase() === 'q') {
-                this.isQPressed = true;
-            } else if (e.key.toLowerCase() === 'e') {
-                this.isEPressed = true;
-            }
-        });
-
-        window.addEventListener('keyup', (e) => {
-            if (e.key.toLowerCase() === 'q') {
-                this.isQPressed = false;
-            } else if (e.key.toLowerCase() === 'e') {
-                this.isEPressed = false;
-            }
-        });
+        window.addEventListener('keydown', this.onKeyDown);
+        window.addEventListener('keyup', this.onKeyUp);
+        this.inputEventsAttached = true;
     }
 
     private updateScoreDisplay(): void {
@@ -267,5 +272,14 @@ export class Game {
         if (this.aiController) {
             this.aiController.setDifficulty(value);
         }
+    }
+
+    dispose(): void {
+        if (this.inputEventsAttached) {
+            window.removeEventListener('keydown', this.onKeyDown);
+            window.removeEventListener('keyup', this.onKeyUp);
+            this.inputEventsAttached = false;
+        }
+        this.renderer.dispose();
     }
 }
