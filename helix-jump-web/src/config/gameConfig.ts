@@ -34,6 +34,15 @@ export const GAME_CONFIG = {
         moving: {
             speed: 0.02,
             maxSwingRadians: Math.PI / 2,
+            indicatorSpokes: {
+                count: 4,
+                radialInset: 0.18,
+                width: 0.08,
+                thickness: 0.012,
+                lift: 0.01,
+                edgePaddingRadians: 0.18,
+                color: 0x111111,
+            },
         },
         difficultyBands: [
             { maxProgressExclusive: 100, trapChance: 0.10, movingChance: 0.15, minGapSize: 90, maxGapSize: 100 },

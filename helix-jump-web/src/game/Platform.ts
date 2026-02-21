@@ -189,6 +189,48 @@ export class Platform {
         this.mesh.add(bottomMesh);
         this.mesh.add(outerMesh);
         this.mesh.add(innerMesh);
+
+        if (this.isMoving) {
+            this.addMovingIndicatorSpokes(solidStartRad, solidAngle);
+        }
+    }
+
+    private addMovingIndicatorSpokes(solidStartRad: number, solidAngle: number): void {
+        const spokeConfig = GAME_CONFIG.platforms.moving.indicatorSpokes;
+        const spokeCount = spokeConfig.count;
+        if (spokeCount <= 0 || solidAngle <= 0.1) return;
+
+        const edgePadding = Math.min(spokeConfig.edgePaddingRadians, solidAngle * 0.25);
+        const usableAngle = solidAngle - edgePadding * 2;
+        if (usableAngle <= 0.05) return;
+
+        const spokeLength = (this.outerRadius - spokeConfig.radialInset) - (this.innerRadius + spokeConfig.radialInset);
+        if (spokeLength <= 0) return;
+
+        const spokeMidRadius = this.innerRadius + spokeConfig.radialInset + spokeLength / 2;
+        const spokeMaterial = new THREE.MeshBasicMaterial({
+            color: spokeConfig.color,
+            side: THREE.DoubleSide,
+        });
+
+        for (let i = 0; i < spokeCount; i++) {
+            const t = (i + 1) / (spokeCount + 1);
+            const angle = solidStartRad + edgePadding + usableAngle * t;
+
+            const spokeGeometry = new THREE.BoxGeometry(
+                spokeLength,
+                spokeConfig.thickness,
+                spokeConfig.width
+            );
+            const spokeMesh = new THREE.Mesh(spokeGeometry, spokeMaterial);
+            spokeMesh.position.set(
+                Math.cos(angle) * spokeMidRadius,
+                this.height / 2 + spokeConfig.lift,
+                Math.sin(angle) * spokeMidRadius
+            );
+            spokeMesh.rotation.y = -angle;
+            this.mesh.add(spokeMesh);
+        }
     }
 
     update(): void {
