@@ -1,6 +1,7 @@
 import { Ball } from './Ball';
 import { Platform } from './Platform';
 import { Tower } from './Tower';
+import { GAME_CONFIG } from '../config/gameConfig';
 
 export type CollisionType = 'none' | 'bounce' | 'pass' | 'trap' | 'finish';
 
@@ -14,7 +15,7 @@ export interface CollisionResult {
  * 물리 엔진 없이 수학적 좌표 비교로 구현 (advice.md 방식)
  */
 export class CollisionSystem {
-    private readonly collisionThreshold: number = 0.4;
+    private readonly collisionThreshold: number = GAME_CONFIG.collision.threshold;
 
     /**
      * 공과 플랫폼 충돌 검사
@@ -45,8 +46,8 @@ export class CollisionSystem {
 
         for (const platform of platforms) {
             // 1단계: 높이 체크
-            const platformTop = platform.y + 0.075;
-            const platformBottom = platform.y - 0.075;
+            const platformTop = platform.y + GAME_CONFIG.collision.platformHalfHeight;
+            const platformBottom = platform.y - GAME_CONFIG.collision.platformHalfHeight;
 
             if (ballY - ballRadius <= platformTop &&
                 ballY - ballRadius >= platformBottom - this.collisionThreshold) {
@@ -55,7 +56,7 @@ export class CollisionSystem {
                 const towerRotationDeg = tower.getRotationDegrees();
                 const platformSelfRotationDeg = platform.selfRotation * (180 / Math.PI);
 
-                const ballWorldAngle = 270;
+                const ballWorldAngle = GAME_CONFIG.collision.ballWorldAngleDeg;
                 const effectiveAngle = this.normalizeAngle(ballWorldAngle - towerRotationDeg - platformSelfRotationDeg);
 
                 if (this.isInGap(effectiveAngle, platform.gapStart, platform.gapEnd)) {

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GAME_CONFIG } from '../config/gameConfig';
 
 export interface PlatformData {
     y: number;
@@ -22,7 +23,7 @@ export class Platform {
     private readonly outerRadius: number = 2.5;
     private readonly height: number = 0.15;
     private movingDirection: number = 1;
-    private readonly movingSpeed: number = 0.02;
+    private readonly movingSpeed: number = GAME_CONFIG.platforms.moving.speed;
 
     constructor(data: PlatformData, scene: THREE.Scene) {
         this.y = data.y;
@@ -123,7 +124,7 @@ export class Platform {
             this.selfRotation += this.movingSpeed * this.movingDirection;
 
             // 90도 범위 내에서 방향 전환
-            if (Math.abs(this.selfRotation) > Math.PI / 2) {
+            if (Math.abs(this.selfRotation) > GAME_CONFIG.platforms.moving.maxSwingRadians) {
                 this.movingDirection *= -1;
             }
 

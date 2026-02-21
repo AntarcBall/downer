@@ -4,6 +4,7 @@ import { Tower } from './Tower';
 import { CollisionSystem } from './CollisionSystem';
 import { PlatformGenerator } from './PlatformGenerator';
 import { AIController } from './AIController';
+import { GAME_CONFIG } from '../config/gameConfig';
 
 export interface GameOptions {
     isAI?: boolean;
@@ -23,7 +24,7 @@ export class Game {
 
     private isQPressed: boolean = false;
     private isEPressed: boolean = false;
-    private rotationSpeed: number = 0.08;
+    private rotationSpeed: number = GAME_CONFIG.controls.rotationSpeed;
 
     private score: number = 0;
     private isGameOver: boolean = false;
@@ -211,7 +212,7 @@ export class Game {
         if (gameOverUI) {
             const finalScoreEl = gameOverUI.querySelector('#final-score, .final-score');
             if (finalScoreEl) {
-                finalScoreEl.textContent = `점수: ${this.score}`;
+                finalScoreEl.textContent = `Score: ${this.score}`;
             }
             gameOverUI.style.display = 'block';
         }
@@ -234,7 +235,7 @@ export class Game {
             const finalScoreEl = gameOverUI.querySelector('#final-score, .final-score');
 
             if (titleEl) titleEl.textContent = message;
-            if (finalScoreEl) finalScoreEl.textContent = `최종 점수: ${this.score}`;
+            if (finalScoreEl) finalScoreEl.textContent = `Final Score: ${this.score}`;
 
             gameOverUI.style.display = 'block';
         }

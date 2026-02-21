@@ -1,6 +1,7 @@
 import { Tower } from './Tower';
 import { Platform } from './Platform';
 import { Ball } from './Ball';
+import { GAME_CONFIG } from '../config/gameConfig';
 
 /**
  * AI 컨트롤러 - 다음 플랫폼의 구멍 방향으로 회전
@@ -35,7 +36,7 @@ export class AIController {
             // 난이도에 따른 고민 시간 부여
             // difficulty 1.0 -> 0ms (즉시 반응)
             // difficulty 0.0 -> 1000ms (1초 고민)
-            const maxThinkingTime = 1000;
+            const maxThinkingTime = GAME_CONFIG.ai.maxThinkingTimeMs;
             const thinkingDuration = (1.0 - this.difficulty) * maxThinkingTime;
             this.thinkingEndTime = Date.now() + thinkingDuration;
         }
@@ -74,7 +75,7 @@ export class AIController {
         if (angleDiff < -180) angleDiff += 360;
 
         // 각도 차이에 따라 회전 (데드존 적용)
-        const deadZone = 5; // 5도 이내면 정지
+        const deadZone = GAME_CONFIG.ai.deadZoneDeg;
         if (Math.abs(angleDiff) > deadZone) {
             if (angleDiff > 0) {
                 tower.rotate(this.rotationSpeed);
