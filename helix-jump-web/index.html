@@ -40,6 +40,14 @@
       gap: 16px;
     }
 
+    .app-logo {
+      display: block;
+      width: min(21vw, 126px);
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.18));
+    }
+
     #main-container {
       display: flex;
       gap: 20px;
@@ -275,6 +283,8 @@
   </div>
 
   <div id="app-shell">
+    <img class="app-logo" src="/src/data/logo.png" alt="Helix Jump Logo" />
+
     <div id="main-container">
       <div class="game-wrapper">
         <div class="game-header">
