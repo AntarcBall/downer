@@ -21,7 +21,7 @@ export class CollisionSystem {
      * 1단계: 높이 체크 (Y 좌표)
      * 2단계: 각도 체크 (Gap 여부)
      */
-    checkCollision(ball: Ball, tower: Tower): CollisionResult {
+    checkCollision(_ball: Ball, _tower: Tower): CollisionResult {
         // 이 메서드는 이제 사용하지 않음 (하위 호환용)
         return { type: 'none' };
     }
