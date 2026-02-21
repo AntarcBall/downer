@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Platform, PlatformData } from './Platform';
 import { GAME_CONFIG, PlatformDifficultyBand } from '../config/gameConfig';
 
-type DifficultyParams = Omit<PlatformDifficultyBand, 'maxScoreExclusive'>;
+type DifficultyParams = Omit<PlatformDifficultyBand, 'maxProgressExclusive'>;
 
 export class PlatformGenerator {
     private scene: THREE.Scene;
@@ -14,22 +14,35 @@ export class PlatformGenerator {
     private lastWasTrap: boolean = false;
     private lastWasMoving: boolean = false;
     private platformCount: number = 0;
+    private initialSeed: number;
+    private randomState: number;
 
-    constructor(scene: THREE.Scene, towerGroup: THREE.Group) {
+    constructor(scene: THREE.Scene, towerGroup: THREE.Group, seed: number = GAME_CONFIG.platforms.defaultLayoutSeed) {
         this.scene = scene;
         this.towerGroup = towerGroup;
+        this.initialSeed = (seed >>> 0) || GAME_CONFIG.platforms.defaultLayoutSeed;
+        this.randomState = this.initialSeed;
     }
 
-    private getDifficulty(score: number): DifficultyParams {
-        const band = GAME_CONFIG.platforms.difficultyBands.find((item) => score < item.maxScoreExclusive)
+    private getDifficulty(progress: number): DifficultyParams {
+        const band = GAME_CONFIG.platforms.difficultyBands.find((item) => progress < item.maxProgressExclusive)
             ?? GAME_CONFIG.platforms.difficultyBands[GAME_CONFIG.platforms.difficultyBands.length - 1];
 
-        const { maxScoreExclusive: _ignored, ...params } = band;
+        const { maxProgressExclusive: _ignored, ...params } = band;
         return params;
     }
 
+    private random(): number {
+        let x = this.randomState;
+        x ^= x << 13;
+        x ^= x >>> 17;
+        x ^= x << 5;
+        this.randomState = x >>> 0;
+        return this.randomState / 0x100000000;
+    }
+
     private randomRange(min: number, max: number): number {
-        return Math.random() * (max - min) + min;
+        return this.random() * (max - min) + min;
     }
 
     private normalizeAngle(angle: number): number {
@@ -38,8 +51,9 @@ export class PlatformGenerator {
         return angle;
     }
 
-    private generatePlatformData(score: number): PlatformData {
-        const difficulty = this.getDifficulty(score);
+    private generatePlatformData(): PlatformData {
+        const difficulty = this.getDifficulty(this.platformCount);
+        const isFirstPlatform = this.platformCount === 0;
 
         const spacing = this.randomRange(
             GAME_CONFIG.platforms.spacing.min,
@@ -60,7 +74,7 @@ export class PlatformGenerator {
         let isTrap = false;
         let isMoving = false;
 
-        if (!this.lastWasTrap && !this.lastWasMoving && Math.random() < difficulty.trapChance) {
+        if (!isFirstPlatform && !this.lastWasTrap && !this.lastWasMoving && this.random() < difficulty.trapChance) {
             isTrap = true;
 
             const trapOffset = this.randomRange(
@@ -70,7 +84,7 @@ export class PlatformGenerator {
             gapCenter = this.normalizeAngle(this.lastGapCenter + trapOffset);
             gapStart = this.normalizeAngle(gapCenter - gapSize / 2);
             gapEnd = this.normalizeAngle(gapCenter + gapSize / 2);
-        } else if (!this.lastWasMoving && Math.random() < difficulty.movingChance) {
+        } else if (!this.lastWasMoving && this.random() < difficulty.movingChance) {
             isMoving = true;
         }
 
@@ -87,11 +101,11 @@ export class PlatformGenerator {
         return { y, gapStart, gapEnd, isTrap, isMoving, color };
     }
 
-    generatePlatforms(ballY: number, score: number): void {
+    generatePlatforms(ballY: number): void {
         const targetY = ballY - GAME_CONFIG.platforms.generationBufferDistance;
 
         while (this.lastY > targetY) {
-            const data = this.generatePlatformData(score);
+            const data = this.generatePlatformData();
             const platform = new Platform(data, this.scene);
             this.towerGroup.add(platform.mesh);
             this.platforms.push(platform);
@@ -137,5 +151,6 @@ export class PlatformGenerator {
         this.lastWasTrap = false;
         this.lastWasMoving = false;
         this.platformCount = 0;
+        this.randomState = this.initialSeed;
     }
 }

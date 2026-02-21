@@ -10,6 +10,7 @@ export interface GameOptions {
     isAI?: boolean;
     scoreElementId?: string;
     gameOverElementId?: string;
+    layoutSeed?: number;
 }
 
 export class Game {
@@ -69,7 +70,7 @@ export class Game {
         this.ball = new Ball(this.scene);
         this.tower = new Tower(this.scene);
         this.collisionSystem = new CollisionSystem();
-        this.platformGenerator = new PlatformGenerator(this.scene, this.tower.group);
+        this.platformGenerator = new PlatformGenerator(this.scene, this.tower.group, options.layoutSeed);
 
         // AI 모드인 경우 AI 컨트롤러 생성
         if (this.isAI) {
@@ -77,7 +78,7 @@ export class Game {
         }
 
         // 초기 플랫폼 생성
-        this.platformGenerator.generatePlatforms(this.ball.y, this.score);
+        this.platformGenerator.generatePlatforms(this.ball.y);
 
         // 입력 이벤트 설정 (AI가 아닌 경우에만)
         if (!this.isAI) {
@@ -157,7 +158,7 @@ export class Game {
         this.ball.update();
 
         // 플랫폼 생성 및 정리
-        this.platformGenerator.generatePlatforms(this.ball.y, this.score);
+        this.platformGenerator.generatePlatforms(this.ball.y);
         this.platformGenerator.cleanupPlatforms(this.ball.y);
         this.platformGenerator.updatePlatforms();
 

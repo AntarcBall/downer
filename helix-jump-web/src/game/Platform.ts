@@ -35,8 +35,6 @@ export class Platform {
         this.mesh = new THREE.Group();
 
         const color = parseInt(data.color, 16);
-
-        // 구멍이 있는 링 생성 (여러 세그먼트로)
         this.createRingWithGap(color);
 
         this.mesh.position.y = this.y;
@@ -44,86 +42,159 @@ export class Platform {
     }
 
     private createRingWithGap(color: number): void {
-        // 구멍 시작/끝 각도를 라디안으로 
+        const TAU = Math.PI * 2;
+        const normalizeRad = (angle: number): number => {
+            let normalized = angle % TAU;
+            if (normalized < 0) normalized += TAU;
+            return normalized;
+        };
+
         const gapStartRad = THREE.MathUtils.degToRad(this.gapStart);
         const gapEndRad = THREE.MathUtils.degToRad(this.gapEnd);
 
-        // 구멍 크기 계산 (라디안)
         let gapSizeRad = gapEndRad - gapStartRad;
-        if (gapSizeRad < 0) gapSizeRad += Math.PI * 2;
+        if (gapSizeRad < 0) gapSizeRad += TAU;
 
-        // 채워진 부분의 각도
-        const solidAngle = Math.PI * 2 - gapSizeRad;
-
-        // 렌더링 시작 각도 (구멍이 끝나는 지점부터 시작)
+        const solidAngle = TAU - gapSizeRad;
         const solidStartRad = gapEndRad;
 
-        if (solidAngle > 0.1) {
-            // 링을 CylinderGeometry로 생성
-            const ringGeometry = new THREE.CylinderGeometry(
+        if (solidAngle <= 0.1) return;
+
+        const ringGeometry = new THREE.CylinderGeometry(
+            this.outerRadius,
+            this.outerRadius,
+            this.height,
+            64,
+            1,
+            true,
+            solidStartRad,
+            solidAngle
+        );
+
+        const innerGeometry = new THREE.CylinderGeometry(
+            this.innerRadius,
+            this.innerRadius,
+            this.height,
+            64,
+            1,
+            true,
+            solidStartRad,
+            solidAngle
+        );
+
+        const material = new THREE.MeshStandardMaterial({
+            color,
+            metalness: 0.2,
+            roughness: 0.6,
+            side: THREE.DoubleSide,
+        });
+
+        const borderMaterial = new THREE.MeshBasicMaterial({
+            color: 0x111111,
+            side: THREE.DoubleSide,
+        });
+
+        const borderThickness = 0.06;
+        const borderLift = 0.002;
+        const edgeBorderAngle = 0.03;
+
+        const topGeometry = new THREE.RingGeometry(
+            this.innerRadius,
+            this.outerRadius,
+            64,
+            1,
+            solidStartRad,
+            solidAngle
+        );
+        topGeometry.rotateX(-Math.PI / 2);
+        const topMesh = new THREE.Mesh(topGeometry, material);
+        topMesh.position.y = this.height / 2;
+
+        const outerBorderGeometry = new THREE.RingGeometry(
+            this.outerRadius - borderThickness,
+            this.outerRadius,
+            64,
+            1,
+            solidStartRad,
+            solidAngle
+        );
+        outerBorderGeometry.rotateX(-Math.PI / 2);
+        const outerBorderMesh = new THREE.Mesh(outerBorderGeometry, borderMaterial);
+        outerBorderMesh.position.y = this.height / 2 + borderLift;
+
+        const innerBorderGeometry = new THREE.RingGeometry(
+            this.innerRadius,
+            this.innerRadius + borderThickness,
+            64,
+            1,
+            solidStartRad,
+            solidAngle
+        );
+        innerBorderGeometry.rotateX(-Math.PI / 2);
+        const innerBorderMesh = new THREE.Mesh(innerBorderGeometry, borderMaterial);
+        innerBorderMesh.position.y = this.height / 2 + borderLift;
+
+        const makeEdgeTopBorder = (edgeAngle: number): THREE.Mesh => {
+            const edgeTopGeometry = new THREE.RingGeometry(
+                this.innerRadius,
                 this.outerRadius,
-                this.outerRadius,
-                this.height,
                 64,
                 1,
-                true,
-                solidStartRad,
-                solidAngle
+                normalizeRad(edgeAngle - edgeBorderAngle / 2),
+                edgeBorderAngle
             );
-            // 내부 원통
-            const innerGeometry = new THREE.CylinderGeometry(
-                this.innerRadius,
-                this.innerRadius,
-                this.height,
-                64,
-                1,
-                true,
-                solidStartRad,
-                solidAngle
+            edgeTopGeometry.rotateX(-Math.PI / 2);
+            const edgeTopMesh = new THREE.Mesh(edgeTopGeometry, borderMaterial);
+            edgeTopMesh.position.y = this.height / 2 + borderLift;
+            return edgeTopMesh;
+        };
+
+        const radialSpan = this.outerRadius - this.innerRadius;
+        const radialMid = this.innerRadius + radialSpan / 2;
+        const makeEdgeSideBorder = (edgeAngle: number): THREE.Mesh => {
+            const edgeSideGeometry = new THREE.PlaneGeometry(radialSpan, this.height);
+            const edgeSideMesh = new THREE.Mesh(edgeSideGeometry, borderMaterial);
+            edgeSideMesh.position.set(
+                Math.cos(edgeAngle) * radialMid,
+                0,
+                Math.sin(edgeAngle) * radialMid
             );
+            edgeSideMesh.rotation.y = -edgeAngle;
+            return edgeSideMesh;
+        };
 
-            const material = new THREE.MeshStandardMaterial({
-                color: color,
-                metalness: 0.2,
-                roughness: 0.6,
-                side: THREE.DoubleSide,
-            });
+        // Always use actual gap boundaries for edge lines.
+        const gapEdgeStartRad = normalizeRad(gapStartRad);
+        const gapEdgeEndRad = normalizeRad(gapEndRad);
 
-            // 상단 면 (링 형태)
-            const topGeometry = new THREE.RingGeometry(
-                this.innerRadius,
-                this.outerRadius,
-                64,
-                1,
-                solidStartRad,
-                solidAngle
-            );
-            topGeometry.rotateX(-Math.PI / 2);
+        const startEdgeTopBorderMesh = makeEdgeTopBorder(gapEdgeStartRad);
+        const endEdgeTopBorderMesh = makeEdgeTopBorder(gapEdgeEndRad);
+        const startEdgeSideBorderMesh = makeEdgeSideBorder(gapEdgeStartRad);
+        const endEdgeSideBorderMesh = makeEdgeSideBorder(gapEdgeEndRad);
 
-            const topMesh = new THREE.Mesh(topGeometry, material);
-            topMesh.position.y = this.height / 2;
+        const bottomGeometry = topGeometry.clone();
+        const bottomMesh = new THREE.Mesh(bottomGeometry, material);
+        bottomMesh.position.y = -this.height / 2;
 
-            const bottomGeometry = topGeometry.clone();
-            const bottomMesh = new THREE.Mesh(bottomGeometry, material);
-            bottomMesh.position.y = -this.height / 2;
+        const outerMesh = new THREE.Mesh(ringGeometry, material);
+        const innerMesh = new THREE.Mesh(innerGeometry, material);
 
-            // 외부/내부 벽
-            const outerMesh = new THREE.Mesh(ringGeometry, material);
-            const innerMesh = new THREE.Mesh(innerGeometry, material);
-
-            this.mesh.add(topMesh);
-            this.mesh.add(bottomMesh);
-            this.mesh.add(outerMesh);
-            this.mesh.add(innerMesh);
-        }
+        this.mesh.add(topMesh);
+        this.mesh.add(outerBorderMesh);
+        this.mesh.add(innerBorderMesh);
+        this.mesh.add(startEdgeTopBorderMesh);
+        this.mesh.add(endEdgeTopBorderMesh);
+        this.mesh.add(startEdgeSideBorderMesh);
+        this.mesh.add(endEdgeSideBorderMesh);
+        this.mesh.add(bottomMesh);
+        this.mesh.add(outerMesh);
+        this.mesh.add(innerMesh);
     }
 
     update(): void {
         if (this.isMoving) {
-            // 좌우로 흔들리는 움직임
             this.selfRotation += this.movingSpeed * this.movingDirection;
 
-            // 90도 범위 내에서 방향 전환
             if (Math.abs(this.selfRotation) > GAME_CONFIG.platforms.moving.maxSwingRadians) {
                 this.movingDirection *= -1;
             }

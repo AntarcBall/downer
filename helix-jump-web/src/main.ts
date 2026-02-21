@@ -10,16 +10,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    const sharedLayoutSeed = (Math.random() * 0xffffffff) >>> 0;
+
     const humanGame = new Game(humanCanvas, {
         isAI: false,
         scoreElementId: 'human-score',
-        gameOverElementId: 'human-game-over'
+        gameOverElementId: 'human-game-over',
+        layoutSeed: sharedLayoutSeed,
     });
 
     const aiGame = new Game(aiCanvas, {
         isAI: true,
         scoreElementId: 'ai-score',
-        gameOverElementId: 'ai-game-over'
+        gameOverElementId: 'ai-game-over',
+        layoutSeed: sharedLayoutSeed,
     });
 
     const humanScoreBox = document.getElementById('human-score-box');
