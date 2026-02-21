@@ -91,9 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const baseG = 0.95;
                 const baseB = 0.96;
 
-                const targetR = 1.0;
-                const targetG = 0.6;
-                const targetB = 0.6;
+                const targetR = 200 / 255;
+                const targetG = 0;
+                const targetB = 0;
 
                 const currentR = baseR + (targetR - baseR) * ratio;
                 const currentG = baseG + (targetG - baseG) * ratio;
