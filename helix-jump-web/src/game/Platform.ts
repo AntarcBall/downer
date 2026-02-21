@@ -149,19 +149,19 @@ export class Platform {
             return edgeTopMesh;
         };
 
-        const radialSpan = this.outerRadius - this.innerRadius;
-        const radialMid = this.innerRadius + radialSpan / 2;
-        const makeEdgeSideBorder = (edgeAngle: number): THREE.Mesh => {
-            const edgeSideGeometry = new THREE.PlaneGeometry(radialSpan, this.height);
-            const edgeSideMesh = new THREE.Mesh(edgeSideGeometry, borderMaterial);
-            edgeSideMesh.position.set(
-                Math.cos(edgeAngle) * radialMid,
-                0,
-                Math.sin(edgeAngle) * radialMid
-            );
-            edgeSideMesh.rotation.y = -edgeAngle;
-            return edgeSideMesh;
-        };
+        // const radialSpan = this.outerRadius - this.innerRadius;
+        // const radialMid = this.innerRadius + radialSpan / 2;
+        // const makeEdgeSideBorder = (edgeAngle: number): THREE.Mesh => {
+        //     const edgeSideGeometry = new THREE.PlaneGeometry(radialSpan, this.height);
+        //     const edgeSideMesh = new THREE.Mesh(edgeSideGeometry, borderMaterial);
+        //     edgeSideMesh.position.set(
+        //         Math.cos(edgeAngle) * radialMid,
+        //         0,
+        //         Math.sin(edgeAngle) * radialMid
+        //     );
+        //     edgeSideMesh.rotation.y = -edgeAngle;
+        //     return edgeSideMesh;
+        // };
 
         // Always use actual gap boundaries for edge lines.
         const gapEdgeStartRad = normalizeRad(gapStartRad);
@@ -169,8 +169,8 @@ export class Platform {
 
         const startEdgeTopBorderMesh = makeEdgeTopBorder(gapEdgeStartRad);
         const endEdgeTopBorderMesh = makeEdgeTopBorder(gapEdgeEndRad);
-        const startEdgeSideBorderMesh = makeEdgeSideBorder(gapEdgeStartRad);
-        const endEdgeSideBorderMesh = makeEdgeSideBorder(gapEdgeEndRad);
+        // const startEdgeSideBorderMesh = makeEdgeSideBorder(gapEdgeStartRad);
+        // const endEdgeSideBorderMesh = makeEdgeSideBorder(gapEdgeEndRad);
 
         const bottomGeometry = topGeometry.clone();
         const bottomMesh = new THREE.Mesh(bottomGeometry, material);
@@ -184,8 +184,8 @@ export class Platform {
         this.mesh.add(innerBorderMesh);
         this.mesh.add(startEdgeTopBorderMesh);
         this.mesh.add(endEdgeTopBorderMesh);
-        this.mesh.add(startEdgeSideBorderMesh);
-        this.mesh.add(endEdgeSideBorderMesh);
+        // this.mesh.add(startEdgeSideBorderMesh);
+        // this.mesh.add(endEdgeSideBorderMesh);
         this.mesh.add(bottomMesh);
         this.mesh.add(outerMesh);
         this.mesh.add(innerMesh);
