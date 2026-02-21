@@ -84,7 +84,10 @@ export class Game {
         this.setupLights();
 
         // 게임 객체 생성
-        this.ball = new Ball(this.scene);
+        this.ball = new Ball(this.scene, {
+            color: this.isAI ? 0x111111 : 0x1e66ff,
+            emissive: this.isAI ? 0x000000 : 0x061126,
+        });
         this.tower = new Tower(this.scene);
         this.collisionSystem = new CollisionSystem();
         this.platformGenerator = new PlatformGenerator(this.scene, this.tower.group, options.layoutSeed);

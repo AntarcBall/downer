@@ -6,14 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Helix Jump - Human vs AI</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Orbitron:wght@600;800&display=swap');
+
     :root {
-      --bg: #f0f2f5;
-      --panel: #ffffff;
-      --text: #333333;
-      --muted: #666666;
-      --human: #4caf50;
-      --ai: #2196f3;
-      --danger: #e94560;
+      --bg: #eef3f8;
+      --panel: rgba(255, 255, 255, 0.9);
+      --panel-border: rgba(40, 56, 78, 0.14);
+      --text: #1f2937;
+      --muted: #4b5563;
+      --human: #1fa463;
+      --ai: #157fe3;
+      --danger: #cf2847;
+      --shadow-lg: 0 20px 45px rgba(16, 24, 40, 0.18);
     }
 
     * {
@@ -23,21 +27,40 @@
     }
 
     body {
-      background-color: var(--bg);
+      background:
+        radial-gradient(1200px 800px at 12% -18%, rgba(27, 152, 224, 0.21), transparent 60%),
+        radial-gradient(1000px 650px at 88% 116%, rgba(18, 185, 129, 0.19), transparent 56%),
+        linear-gradient(160deg, #edf2f7 0%, #dbe7f3 46%, #f3f7fb 100%);
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Chakra Petch', 'Noto Sans KR', sans-serif;
       overflow: auto;
       padding: 16px;
+      position: relative;
+      isolation: isolate;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.2;
+      background-image:
+        linear-gradient(rgba(31, 41, 55, 0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(31, 41, 55, 0.15) 1px, transparent 1px);
+      background-size: 32px 32px;
     }
 
     #app-shell {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
+      width: min(96vw, 900px);
     }
 
     .app-logo {
@@ -46,6 +69,15 @@
       height: auto;
       object-fit: contain;
       filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.18));
+    }
+
+    .app-brandline {
+      margin-top: -2px;
+      letter-spacing: 0.22em;
+      font-size: 12px;
+      font-family: 'Orbitron', 'Chakra Petch', sans-serif;
+      text-transform: uppercase;
+      color: rgba(31, 41, 55, 0.74);
     }
 
     #main-container {
@@ -66,31 +98,33 @@
       align-items: center;
       width: 100%;
       padding: 15px 20px;
-      background: var(--panel);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(247, 250, 253, 0.88));
       border-radius: 12px 12px 0 0;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--panel-border);
+      box-shadow: 0 9px 24px rgba(17, 24, 39, 0.12);
       z-index: 10;
     }
 
     .player-label {
-      font-size: 20px;
+      font-size: 21px;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.08em;
+      font-family: 'Orbitron', 'Chakra Petch', sans-serif;
     }
 
     .score-box {
-      background: #f8f9fa;
+      background: #f9fbfd;
       padding: 10px 20px;
       border-radius: 12px;
       box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
-      border: 2px solid #eee;
+      border: 2px solid rgba(148, 163, 184, 0.28);
       display: flex;
       justify-content: center;
       align-items: center;
       min-width: 100px;
       height: 80px;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
     .score-display {
@@ -98,6 +132,20 @@
       font-weight: 900;
       color: var(--text);
       line-height: 1;
+      font-family: 'Orbitron', 'Chakra Petch', sans-serif;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+
+    @keyframes leadPulseHuman {
+      0% { transform: scale(1.14); box-shadow: 0 10px 20px rgba(31, 164, 99, 0.2); }
+      50% { transform: scale(1.2); box-shadow: 0 12px 30px rgba(31, 164, 99, 0.38); }
+      100% { transform: scale(1.14); box-shadow: 0 10px 20px rgba(31, 164, 99, 0.2); }
+    }
+
+    @keyframes leadPulseAI {
+      0% { transform: scale(1.14); box-shadow: 0 10px 20px rgba(21, 127, 227, 0.2); }
+      50% { transform: scale(1.2); box-shadow: 0 12px 30px rgba(21, 127, 227, 0.38); }
+      100% { transform: scale(1.14); box-shadow: 0 10px 20px rgba(21, 127, 227, 0.2); }
     }
 
     .player-label.human {
@@ -110,22 +158,30 @@
 
     .score-box.human-lead {
       border-color: var(--human);
-      background: #e8f5e9;
-      transform: scale(1.2);
-      box-shadow: 0 10px 20px rgba(76, 175, 80, 0.2);
+      background: linear-gradient(180deg, #e6f8ee 0%, #ddf4e7 100%);
+      animation: leadPulseHuman 1.3s ease-in-out infinite;
     }
 
     .score-box.ai-lead {
       border-color: var(--ai);
-      background: #e3f2fd;
-      transform: scale(1.2);
-      box-shadow: 0 10px 20px rgba(33, 150, 243, 0.2);
+      background: linear-gradient(180deg, #e5f1ff 0%, #d9ecff 100%);
+      animation: leadPulseAI 1.3s ease-in-out infinite;
     }
 
     .score-box.losing {
       transform: scale(0.8);
       opacity: 0.7;
       background: #fafafa;
+    }
+
+    .score-box.trap-hit {
+      border-color: #d11f37;
+      background: linear-gradient(180deg, #ffd9df 0%, #ffc2cc 100%);
+      color: #8a1021;
+      transform: scale(1.08);
+      box-shadow: 0 12px 30px rgba(209, 31, 55, 0.36);
+      animation: none;
+      opacity: 1;
     }
 
     .game-container {
@@ -138,7 +194,8 @@
       height: 100%;
       display: block;
       border-radius: 0 0 8px 8px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(47, 72, 105, 0.18);
+      box-shadow: var(--shadow-lg);
     }
 
     .round-status {
@@ -152,11 +209,33 @@
     .game-status-card {
       flex: 1;
       display: none;
-      background: var(--panel);
-      border: 2px solid #e5e8ed;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 248, 252, 0.94));
+      border: 1px solid var(--panel-border);
       border-radius: 12px;
-      padding: 14px 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      padding: 16px 18px;
+      box-shadow: 0 12px 28px rgba(17, 24, 39, 0.14);
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .game-status-card.state-win {
+      border-color: rgba(14, 165, 233, 0.45);
+      background: linear-gradient(180deg, rgba(232, 246, 255, 0.97), rgba(221, 240, 255, 0.95));
+      box-shadow: 0 14px 34px rgba(14, 165, 233, 0.18);
+      transform: translateY(-2px);
+    }
+
+    .game-status-card.state-win h2 {
+      color: #0369a1;
+    }
+
+    .game-status-card.state-lose {
+      border-color: rgba(220, 38, 38, 0.4);
+      background: linear-gradient(180deg, rgba(255, 236, 236, 0.98), rgba(255, 224, 224, 0.95));
+      box-shadow: 0 14px 34px rgba(220, 38, 38, 0.16);
+    }
+
+    .game-status-card.state-lose h2 {
+      color: #b91c1c;
     }
 
     .game-status-card h2 {
@@ -168,12 +247,16 @@
     .game-status-card .final-score {
       font-size: 16px;
       color: var(--text);
+      font-weight: 700;
     }
 
     .controls-info {
       text-align: center;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-family: 'Orbitron', 'Chakra Petch', sans-serif;
     }
 
     .controls-info kbd {
@@ -191,7 +274,10 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.95);
+      background:
+        radial-gradient(900px 500px at 25% 20%, rgba(21, 127, 227, 0.18), transparent 62%),
+        radial-gradient(700px 400px at 75% 78%, rgba(31, 164, 99, 0.16), transparent 60%),
+        rgba(245, 249, 253, 0.96);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -204,7 +290,8 @@
       color: var(--text);
       margin-bottom: 20px;
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 0.1em;
+      font-family: 'Orbitron', 'Chakra Petch', sans-serif;
     }
 
     .difficulty-control {
@@ -234,7 +321,7 @@
     }
 
     .start-btn {
-      background: linear-gradient(135deg, #2196f3, #21cbf3);
+      background: linear-gradient(135deg, #157fe3, #22b8cf);
       border: none;
       color: white;
       padding: 15px 40px;
@@ -243,7 +330,7 @@
       border-radius: 30px;
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+      box-shadow: 0 8px 22px rgba(21, 127, 227, 0.32);
     }
 
     .start-btn:hover {
@@ -266,7 +353,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-9i4M3BDB.js"></script>
+  <script type="module" crossorigin src="/assets/index-CQqmMtEF.js"></script>
 </head>
 
 <body>
@@ -285,6 +372,7 @@
 
   <div id="app-shell">
     <img class="app-logo" src="/assets/logo-DauEFXFu.png" alt="Helix Jump Logo" />
+    <div class="app-brandline">Head To Head Gravity Match</div>
 
     <div id="main-container">
       <div class="game-wrapper">

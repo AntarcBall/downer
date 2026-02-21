@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { GAME_CONFIG } from '../config/gameConfig';
 
+export interface BallOptions {
+    color?: number;
+    emissive?: number;
+}
+
 export class Ball {
     public mesh: THREE.Mesh;
     public y: number = 0;
@@ -11,15 +16,38 @@ export class Ball {
     private readonly bounceForce: number = GAME_CONFIG.physics.bounceVelocity;
     private readonly radius: number = GAME_CONFIG.physics.ballRadius;
 
-    constructor(scene: THREE.Scene) {
+    constructor(scene: THREE.Scene, options: BallOptions = {}) {
+        const ballColor = options.color ?? 0xdd2b3a;
+        const emissiveColor = options.emissive ?? 0x240508;
+
         const geometry = new THREE.SphereGeometry(this.radius, 32, 32);
-        const material = new THREE.MeshBasicMaterial({
-            color: 0xff0000,
+        const material = new THREE.MeshStandardMaterial({
+            color: ballColor,
+            metalness: 0.08,
+            roughness: 0.28,
+            emissive: emissiveColor,
+            emissiveIntensity: 0.18,
         });
 
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.castShadow = true;
+        this.mesh.receiveShadow = true;
         this.mesh.position.set(0, this.y, GAME_CONFIG.physics.ballZ);
+
+        // Cheap 3D look boost: top highlight + underside shade, no gameplay impact.
+        const highlight = new THREE.Mesh(
+            new THREE.SphereGeometry(this.radius * 0.32, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.42 })
+        );
+        highlight.position.set(this.radius * 0.28, this.radius * 0.3, this.radius * 0.24);
+        this.mesh.add(highlight);
+
+        const undersideShade = new THREE.Mesh(
+            new THREE.SphereGeometry(this.radius * 0.52, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.14 })
+        );
+        undersideShade.position.set(0, -this.radius * 0.42, 0);
+        this.mesh.add(undersideShade);
 
         scene.add(this.mesh);
     }

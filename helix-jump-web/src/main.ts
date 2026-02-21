@@ -38,14 +38,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let isEHeld = false;
     let restartHoldStartedAt: number | null = null;
 
+    const setCardState = (el: HTMLElement | null, state: 'neutral' | 'win' | 'lose'): void => {
+        if (!el) return;
+        el.classList.remove('state-win', 'state-lose');
+        if (state === 'win') el.classList.add('state-win');
+        if (state === 'lose') el.classList.add('state-lose');
+    };
+
     const getDifficulty = (): number => {
         return Math.max(0, Math.min(1, parseInt(difficultySlider.value, 10) / 100));
     };
 
     const resetRoundUI = (): void => {
         if (humanScoreBox && aiScoreBox) {
-            humanScoreBox.classList.remove('human-lead', 'losing');
-            aiScoreBox.classList.remove('ai-lead', 'losing');
+            humanScoreBox.classList.remove('human-lead', 'losing', 'trap-hit');
+            aiScoreBox.classList.remove('ai-lead', 'losing', 'trap-hit');
         }
 
         if (humanGameOverCard) {
@@ -53,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const finalScoreEl = humanGameOverCard.querySelector('.final-score');
             if (titleEl) titleEl.textContent = 'ROUND END';
             if (finalScoreEl) finalScoreEl.textContent = 'Score: 0';
+            setCardState(humanGameOverCard, 'neutral');
             humanGameOverCard.style.display = 'none';
         }
 
@@ -61,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const finalScoreEl = aiGameOverCard.querySelector('.final-score');
             if (titleEl) titleEl.textContent = 'ROUND END';
             if (finalScoreEl) finalScoreEl.textContent = 'Score: 0';
+            setCardState(aiGameOverCard, 'neutral');
             aiGameOverCard.style.display = 'none';
         }
     };
@@ -88,7 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
         aiGame.setTargetBackgroundColor(BASE_BG.r, BASE_BG.g, BASE_BG.b);
     };
 
-    const freezeRound = (humanMessage: string, aiMessage: string): void => {
+    const freezeRound = (
+        humanMessage: string,
+        aiMessage: string,
+        humanState: 'neutral' | 'win' | 'lose' = 'neutral',
+        aiState: 'neutral' | 'win' | 'lose' = 'neutral'
+    ): void => {
         if (isRoundFrozen) return;
 
         isRoundFrozen = true;
@@ -97,6 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         humanGame.forceGameOver(humanMessage);
         aiGame.forceGameOver(aiMessage);
+        setCardState(humanGameOverCard, humanState);
+        setCardState(aiGameOverCard, aiState);
     };
 
     const restartRound = (): void => {
@@ -187,10 +203,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (humanGame.isOver() || aiGame.isOver()) {
                 if (humanGame.isOver() && !aiGame.isOver()) {
-                    freezeRound('HUMAN DOWN', 'AI SURVIVED');
+                    if (humanScoreBox && aiScoreBox) {
+                        humanScoreBox.classList.remove('human-lead', 'losing');
+                        aiScoreBox.classList.remove('ai-lead', 'losing');
+                        humanScoreBox.classList.add('trap-hit');
+                    }
+                    freezeRound('HUMAN DOWN', 'AI SURVIVED', 'lose', 'win');
                 } else if (!humanGame.isOver() && aiGame.isOver()) {
-                    freezeRound('HUMAN SURVIVED', 'AI DOWN');
+                    if (humanScoreBox && aiScoreBox) {
+                        humanScoreBox.classList.remove('human-lead', 'losing');
+                        aiScoreBox.classList.remove('ai-lead', 'losing');
+                        aiScoreBox.classList.add('trap-hit');
+                    }
+                    freezeRound('HUMAN SURVIVED', 'AI DOWN', 'win', 'lose');
                 } else {
+                    if (humanScoreBox && aiScoreBox) {
+                        humanScoreBox.classList.remove('human-lead', 'losing');
+                        aiScoreBox.classList.remove('ai-lead', 'losing');
+                        humanScoreBox.classList.add('trap-hit');
+                        aiScoreBox.classList.add('trap-hit');
+                    }
                     freezeRound('ROUND END', 'ROUND END');
                 }
             } else {
@@ -217,8 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (humanScoreBox && aiScoreBox) {
-                    humanScoreBox.classList.remove('human-lead', 'losing');
-                    aiScoreBox.classList.remove('ai-lead', 'losing');
+                    humanScoreBox.classList.remove('human-lead', 'losing', 'trap-hit');
+                    aiScoreBox.classList.remove('ai-lead', 'losing', 'trap-hit');
 
                     if (diff > 0) {
                         humanScoreBox.classList.add('human-lead');
@@ -231,9 +263,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (Math.abs(diff) >= 10) {
                     if (diff > 0) {
-                        freezeRound('PERFECT WIN!', 'DEFEAT (Score Gap > 10)');
+                        freezeRound('PERFECT WIN!', 'DEFEAT (Score Gap > 10)', 'win', 'lose');
                     } else {
-                        freezeRound('DEFEAT (Score Gap > 10)', 'AI WINS!');
+                        freezeRound('DEFEAT (Score Gap > 10)', 'AI WINS!', 'lose', 'win');
                     }
                 }
             }
