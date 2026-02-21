@@ -191,13 +191,16 @@ export class Platform {
         this.mesh.add(innerMesh);
 
         if (this.isMoving) {
-            this.addMovingIndicatorSpokes(solidStartRad, solidAngle);
+            this.addMovingIndicatorSpokes(topGeometry);
         }
     }
 
-    private addMovingIndicatorSpokes(solidStartRad: number, solidAngle: number): void {
+    private addMovingIndicatorSpokes(topGeometry: THREE.RingGeometry): void {
         const spokeConfig = GAME_CONFIG.platforms.moving.indicatorSpokes;
         const spokeCount = spokeConfig.count;
+        const { thetaStart, thetaLength } = topGeometry.parameters;
+        const solidStartRad = thetaStart;
+        const solidAngle = thetaLength;
         if (spokeCount <= 0 || solidAngle <= 0.1) return;
 
         const edgePadding = Math.min(spokeConfig.edgePaddingRadians, solidAngle * 0.25);
@@ -226,9 +229,9 @@ export class Platform {
             spokeMesh.position.set(
                 Math.cos(angle) * spokeMidRadius,
                 this.height / 2 + spokeConfig.lift,
-                Math.sin(angle) * spokeMidRadius
+                -Math.sin(angle) * spokeMidRadius
             );
-            spokeMesh.rotation.y = -angle;
+            spokeMesh.rotation.y = angle;
             this.mesh.add(spokeMesh);
         }
     }
