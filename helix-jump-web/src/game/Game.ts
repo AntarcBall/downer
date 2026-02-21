@@ -197,6 +197,18 @@ export class Game {
                 break;
 
             case 'trap':
+                if (this.isAI && this.score < 10) {
+                    this.ball.bounce();
+                    if (collision.platform) {
+                        const platformY = collision.platform.y;
+                        if (!this.passedPlatformYs.has(platformY)) {
+                            this.passedPlatformYs.add(platformY);
+                            this.score += 1;
+                            this.updateScoreDisplay();
+                        }
+                    }
+                    break;
+                }
                 this.ball.die();
                 this.isGameOver = true;
                 this.showGameOver();

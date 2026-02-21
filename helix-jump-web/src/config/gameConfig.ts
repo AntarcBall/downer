@@ -21,8 +21,8 @@ export const GAME_CONFIG = {
         initialY: -2,
         defaultLayoutSeed: 1337,
         spacing: {
-            min: 2.2,
-            max: 3.2,
+            min: 2.8,
+            max: 3.4,
         },
         generationBufferDistance: 15,
         cleanupDistance: 10,
