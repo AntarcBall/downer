@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const startBtn = document.getElementById('start-btn');
     const difficultySlider = document.getElementById('ai-difficulty') as HTMLInputElement;
     const difficultyValue = document.getElementById('difficulty-value');
+    const scoreGapSlider = document.getElementById('score-gap-threshold') as HTMLInputElement;
+    const scoreGapValue = document.getElementById('score-gap-value');
     const darkenOverlay = document.getElementById('reset-darken-overlay') as HTMLElement | null;
 
     const humanGameOverCard = document.getElementById('human-game-over');
@@ -33,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isPlaying = false;
     let isRoundFrozen = false;
+    let scoreGapWinThreshold = 5;
 
     let restartComboIndex = 0;
     let restartSequenceLocked = false;
@@ -46,6 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getDifficulty = (): number => {
         return Math.max(0, Math.min(1, parseInt(difficultySlider.value, 10) / 100));
+    };
+
+    const getScoreGapThreshold = (): number => {
+        const raw = parseInt(scoreGapSlider.value, 10);
+        if (Number.isNaN(raw)) return 5;
+        return Math.max(4, Math.min(10, raw));
     };
 
     const applyDarkenProgress = (): void => {
@@ -96,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
             scoreElementId: 'human-score',
             gameOverElementId: 'human-game-over',
             layoutSeed,
+            showOpponentLayerBand: true,
         });
 
         aiGame = new Game(aiCanvas, {
@@ -103,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             scoreElementId: 'ai-score',
             gameOverElementId: 'ai-game-over',
             layoutSeed,
+            showOpponentLayerBand: false,
         });
 
         aiGame.setAIDifficulty(getDifficulty());
@@ -182,11 +193,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (scoreGapSlider && scoreGapValue) {
+        scoreGapSlider.addEventListener('input', () => {
+            scoreGapValue.textContent = scoreGapSlider.value;
+        });
+    }
+
     if (startBtn && startScreen) {
         startBtn.addEventListener('click', () => {
             startScreen.style.display = 'none';
             isPlaying = true;
             isRoundFrozen = false;
+            scoreGapWinThreshold = getScoreGapThreshold();
             aiGame.setAIDifficulty(getDifficulty());
         });
     }
@@ -227,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const aiScore = aiGame.getScore();
                 const diff = humanScore - aiScore;
 
-                const maxDiff = 10;
+                const maxDiff = scoreGapWinThreshold;
                 const ratio = Math.min(Math.abs(diff) / maxDiff, 1.0);
 
                 const currentR = BASE_BG.r + (TARGET_BG.r - BASE_BG.r) * ratio;
@@ -258,14 +276,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                if (Math.abs(diff) >= 10) {
+                if (Math.abs(diff) >= scoreGapWinThreshold) {
                     if (diff > 0) {
-                        freezeRound('PERFECT WIN!', 'DEFEAT (Score Gap > 10)', 'win', 'lose');
+                        freezeRound(`PERFECT WIN!`, `DEFEAT (Score Gap > ${scoreGapWinThreshold})`, 'win', 'lose');
                     } else {
-                        freezeRound('DEFEAT (Score Gap > 10)', 'AI WINS!', 'lose', 'win');
+                        freezeRound(`DEFEAT (Score Gap > ${scoreGapWinThreshold})`, 'AI WINS!', 'lose', 'win');
                     }
                 }
             }
+        }
+
+        if (isPlaying) {
+            const humanBallY = humanGame.getBallY();
+            const aiBallY = aiGame.getBallY();
+            const delta = humanBallY - aiBallY;
+            const showBand = (delta >= 0 && delta <= 2) || (delta <= -1 && delta >= -5);
+            humanGame.setOpponentLayerBandY(showBand ? aiBallY : null);
+        } else {
+            humanGame.setOpponentLayerBandY(null);
         }
 
         humanGame.render();

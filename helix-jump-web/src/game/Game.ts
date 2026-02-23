@@ -11,6 +11,10 @@ export interface GameOptions {
     scoreElementId?: string;
     gameOverElementId?: string;
     layoutSeed?: number;
+    showOpponentLayerBand?: boolean;
+    rotationSpeed?: number;
+    gravity?: number;
+    bounceVelocity?: number;
 }
 
 export class Game {
@@ -23,11 +27,12 @@ export class Game {
     private collisionSystem: CollisionSystem;
     private platformGenerator: PlatformGenerator;
     private aiController: AIController | null = null;
+    private opponentLayerBand: THREE.Mesh | null = null;
 
     private isQPressed: boolean = false;
     private isEPressed: boolean = false;
     private inputEventsAttached: boolean = false;
-    private rotationSpeed: number = GAME_CONFIG.controls.rotationSpeed;
+    private rotationSpeed: number;
 
     private score: number = 0;
     private isGameOver: boolean = false;
@@ -39,6 +44,7 @@ export class Game {
     private isAI: boolean;
     private scoreElementId: string;
     private gameOverElementId: string;
+    private readonly showOpponentLayerBand: boolean;
     private readonly onKeyDown = (e: KeyboardEvent): void => {
         if (this.isGameOver) return;
 
@@ -61,6 +67,8 @@ export class Game {
         this.isAI = options.isAI || false;
         this.scoreElementId = options.scoreElementId || 'score-value';
         this.gameOverElementId = options.gameOverElementId || 'game-over-ui';
+        this.showOpponentLayerBand = options.showOpponentLayerBand || false;
+        this.rotationSpeed = options.rotationSpeed ?? GAME_CONFIG.controls.rotationSpeed;
 
         // Scene 설정
         this.scene = new THREE.Scene();
@@ -92,10 +100,16 @@ export class Game {
         this.ball = new Ball(this.scene, {
             color: this.isAI ? 0x111111 : 0x1e66ff,
             emissive: this.isAI ? 0x000000 : 0x061126,
+            gravity: options.gravity,
+            bounceVelocity: options.bounceVelocity,
         });
         this.tower = new Tower(this.scene);
         this.collisionSystem = new CollisionSystem();
         this.platformGenerator = new PlatformGenerator(this.scene, this.tower.group, options.layoutSeed);
+
+        if (this.showOpponentLayerBand) {
+            this.createOpponentLayerBand();
+        }
 
         // AI 모드인 경우 AI 컨트롤러 생성
         if (this.isAI) {
@@ -309,6 +323,43 @@ export class Game {
         }
     }
 
+    getBallY(): number {
+        return this.ball.y;
+    }
+
+    setOpponentLayerBandY(y: number | null): void {
+        if (!this.opponentLayerBand) return;
+
+        if (y === null) {
+            this.opponentLayerBand.visible = false;
+            return;
+        }
+
+        this.opponentLayerBand.visible = true;
+        this.opponentLayerBand.position.y = y + 0.01;
+    }
+
+    private createOpponentLayerBand(): void {
+        const platformOuterRadius = 2.5;
+        const k = 0.18;
+        const innerRadius = platformOuterRadius + k;
+        const outerRadius = platformOuterRadius + 2 * k;
+
+        const geometry = new THREE.RingGeometry(innerRadius, outerRadius, 64);
+        geometry.rotateX(-Math.PI / 2);
+
+        const material = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.82,
+            side: THREE.DoubleSide,
+        });
+
+        this.opponentLayerBand = new THREE.Mesh(geometry, material);
+        this.opponentLayerBand.visible = false;
+        this.tower.group.add(this.opponentLayerBand);
+    }
+
     private emitPassBurstEffect(streak: number): void {
         const now = Date.now();
         if (now - this.lastBurstAtMs < 30) return;
@@ -421,6 +472,14 @@ export class Game {
             window.removeEventListener('keydown', this.onKeyDown);
             window.removeEventListener('keyup', this.onKeyUp);
             this.inputEventsAttached = false;
+        }
+        if (this.opponentLayerBand) {
+            this.tower.group.remove(this.opponentLayerBand);
+            this.opponentLayerBand.geometry.dispose();
+            if (this.opponentLayerBand.material instanceof THREE.Material) {
+                this.opponentLayerBand.material.dispose();
+            }
+            this.opponentLayerBand = null;
         }
         this.renderer.dispose();
     }

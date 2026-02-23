@@ -304,9 +304,16 @@
       font-family: 'Orbitron', 'Chakra Petch', sans-serif;
     }
 
-    .difficulty-control {
+    .start-controls {
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
       margin-bottom: 30px;
-      width: 300px;
+    }
+
+    .difficulty-control {
+      width: 100%;
       text-align: center;
     }
 
@@ -368,12 +375,22 @@
 <body>
   <div id="start-screen" class="start-screen">
     <h1>HELIX JUMP VS</h1>
-    <div class="difficulty-control">
-      <label for="ai-difficulty">AI Difficulty: <span id="difficulty-value">50</span></label>
-      <input type="range" id="ai-difficulty" min="0" max="100" value="50">
-      <div class="difficulty-labels">
-        <span>Easy (Slow)</span>
-        <span>Hard (Fast)</span>
+    <div class="start-controls">
+      <div class="difficulty-control">
+        <label for="ai-difficulty">AI Difficulty: <span id="difficulty-value">50</span></label>
+        <input type="range" id="ai-difficulty" min="0" max="100" value="50">
+        <div class="difficulty-labels">
+          <span>Easy (Slow)</span>
+          <span>Hard (Fast)</span>
+        </div>
+      </div>
+      <div class="difficulty-control">
+        <label for="score-gap-threshold">Match End Gap: <span id="score-gap-value">5</span></label>
+        <input type="range" id="score-gap-threshold" min="4" max="10" step="1" value="5">
+        <div class="difficulty-labels">
+          <span>4</span>
+          <span>10</span>
+        </div>
       </div>
     </div>
     <button id="start-btn" class="start-btn">GAME START</button>

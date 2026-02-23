@@ -4,6 +4,8 @@ import { GAME_CONFIG } from '../config/gameConfig';
 export interface BallOptions {
     color?: number;
     emissive?: number;
+    gravity?: number;
+    bounceVelocity?: number;
 }
 
 export class Ball {
@@ -12,13 +14,15 @@ export class Ball {
     public velocityY: number = 0;
     public isAlive: boolean = true;
 
-    private readonly gravity: number = GAME_CONFIG.physics.gravity;
-    private readonly bounceForce: number = GAME_CONFIG.physics.bounceVelocity;
+    private readonly gravity: number;
+    private readonly bounceForce: number;
     private readonly radius: number = GAME_CONFIG.physics.ballRadius;
 
     constructor(scene: THREE.Scene, options: BallOptions = {}) {
         const ballColor = options.color ?? 0xdd2b3a;
         const emissiveColor = options.emissive ?? 0x240508;
+        this.gravity = options.gravity ?? GAME_CONFIG.physics.gravity;
+        this.bounceForce = options.bounceVelocity ?? GAME_CONFIG.physics.bounceVelocity;
 
         const geometry = new THREE.SphereGeometry(this.radius, 32, 32);
         const material = new THREE.MeshStandardMaterial({
