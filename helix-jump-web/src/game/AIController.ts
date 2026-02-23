@@ -9,6 +9,7 @@ import { GAME_CONFIG } from '../config/gameConfig';
  */
 export class AIController {
     private rotationSpeed: number;
+    private readonly anticipationRatio: number = 0.2;
 
     constructor(rotationSpeed: number) {
         this.rotationSpeed = rotationSpeed;
@@ -38,7 +39,9 @@ export class AIController {
             // difficulty 0.0 -> 1000ms (1초 고민)
             const maxThinkingTime = GAME_CONFIG.ai.maxThinkingTimeMs;
             const thinkingDuration = (1.0 - this.difficulty) * maxThinkingTime;
-            this.thinkingEndTime = Date.now() + thinkingDuration;
+            // Start rotating about 20% earlier while keeping the original difficulty curve shape.
+            const earlyThinkingDuration = Math.max(0, thinkingDuration * (1 - this.anticipationRatio));
+            this.thinkingEndTime = Date.now() + earlyThinkingDuration;
         }
 
         if (!nextPlatform) return;
