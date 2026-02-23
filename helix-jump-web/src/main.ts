@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isPlaying = false;
     let isRoundFrozen = false;
+    let opponentBandVisibleLatch = false;
     let scoreGapWinThreshold = 5;
 
     let restartComboIndex = 0;
@@ -290,9 +291,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const humanBallY = humanGame.getBallY();
             const aiBallY = aiGame.getBallY();
             const delta = humanBallY - aiBallY;
-            const showBand = (delta >= 0 && delta <= 2) || (delta <= -1 && delta >= -5);
-            humanGame.setOpponentLayerBandY(showBand ? aiBallY : null);
+
+            // Stabilize visibility near thresholds to prevent flicker.
+            // Use symmetric range so the marker stays visible even when player is behind.
+            const absDelta = Math.abs(delta);
+            const enterRange = absDelta <= 8;
+            const keepRange = absDelta <= 8.6;
+            if (opponentBandVisibleLatch) {
+                opponentBandVisibleLatch = keepRange;
+            } else {
+                opponentBandVisibleLatch = enterRange;
+            }
+
+            humanGame.setOpponentLayerBandY(opponentBandVisibleLatch ? aiBallY : null);
         } else {
+            opponentBandVisibleLatch = false;
             humanGame.setOpponentLayerBandY(null);
         }
 
