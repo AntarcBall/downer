@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { Ball } from './Ball';
 import { Tower } from './Tower';
-import { CollisionSystem } from './CollisionSystem';
+import { CollisionSystem, CollisionType } from './CollisionSystem';
 import { PlatformGenerator } from './PlatformGenerator';
 import { AIController } from './AIController';
+import { Platform } from './Platform';
 import { GAME_CONFIG } from '../config/gameConfig';
 
 export interface GameOptions {
@@ -15,6 +16,7 @@ export interface GameOptions {
     rotationSpeed?: number;
     gravity?: number;
     bounceVelocity?: number;
+    particleIntensity?: number;
 }
 
 export class Game {
@@ -33,6 +35,7 @@ export class Game {
     private isEPressed: boolean = false;
     private inputEventsAttached: boolean = false;
     private rotationSpeed: number;
+    private particleIntensity: number;
 
     private score: number = 0;
     private isGameOver: boolean = false;
@@ -69,6 +72,7 @@ export class Game {
         this.gameOverElementId = options.gameOverElementId || 'game-over-ui';
         this.showOpponentLayerBand = options.showOpponentLayerBand || false;
         this.rotationSpeed = options.rotationSpeed ?? GAME_CONFIG.controls.rotationSpeed;
+        this.particleIntensity = Math.max(0, Math.min(1, options.particleIntensity ?? 1));
 
         // Scene 설정
         this.scene = new THREE.Scene();
@@ -161,6 +165,81 @@ export class Game {
         }
     }
 
+    private addScoreForPlatform(platformY: number): boolean {
+        if (this.passedPlatformYs.has(platformY)) {
+            return false;
+        }
+        this.passedPlatformYs.add(platformY);
+        this.score += 1;
+        return true;
+    }
+
+    private normalizeAngle(angle: number): number {
+        let normalized = angle % 360;
+        if (normalized < 0) normalized += 360;
+        return normalized;
+    }
+
+    private isInGap(angle: number, gapStart: number, gapEnd: number): boolean {
+        const normalizedAngle = this.normalizeAngle(angle);
+        const normalizedStart = this.normalizeAngle(gapStart);
+        const normalizedEnd = this.normalizeAngle(gapEnd);
+
+        if (normalizedStart > normalizedEnd) {
+            return normalizedAngle >= normalizedStart || normalizedAngle <= normalizedEnd;
+        }
+
+        return normalizedAngle >= normalizedStart && normalizedAngle <= normalizedEnd;
+    }
+
+    private isPassThroughAtCurrentAngles(platform: Platform): boolean {
+        const towerRotationDeg = this.tower.getRotationDegrees();
+        const platformSelfRotationDeg = platform.selfRotation * (180 / Math.PI);
+        const effectiveAngle = this.normalizeAngle(
+            GAME_CONFIG.collision.ballWorldAngleDeg - towerRotationDeg - platformSelfRotationDeg
+        );
+        return this.isInGap(effectiveAngle, platform.gapStart, platform.gapEnd);
+    }
+
+    private scoreSkippedPasses(
+        previousBallY: number,
+        currentBallY: number,
+        platforms: Platform[],
+        collisionType: CollisionType,
+        collisionPlatform?: Platform
+    ): void {
+        if (currentBallY >= previousBallY) return;
+
+        const ballRadius = this.ball.getRadius();
+        const previousBottomY = previousBallY - ballRadius;
+        const currentBottomY = currentBallY - ballRadius;
+
+        let scoringLowerBoundY = currentBottomY;
+        if ((collisionType === 'bounce' || collisionType === 'trap') && collisionPlatform) {
+            // Do not award pass points below the blocking platform.
+            scoringLowerBoundY = Math.max(scoringLowerBoundY, collisionPlatform.y);
+        }
+
+        if (scoringLowerBoundY >= previousBottomY) return;
+
+        let scoreChanged = false;
+        for (const platform of platforms) {
+            if (platform.y >= previousBottomY || platform.y < scoringLowerBoundY) {
+                continue;
+            }
+            if (this.passedPlatformYs.has(platform.y)) {
+                continue;
+            }
+            if (this.isPassThroughAtCurrentAngles(platform) && this.addScoreForPlatform(platform.y)) {
+                scoreChanged = true;
+            }
+        }
+
+        if (scoreChanged) {
+            this.updateScoreDisplay();
+        }
+    }
+
     update(): void {
         if (this.isGameOver) return;
 
@@ -183,6 +262,8 @@ export class Game {
 
         // 공 업데이트
         this.ball.update();
+        const previousBallY = this.ball.y - this.ball.velocityY;
+        const currentBallY = this.ball.y;
 
         // 플랫폼 생성 및 정리
         this.platformGenerator.generatePlatforms(this.ball.y);
@@ -209,9 +290,7 @@ export class Game {
                 this.ball.bounce();
                 if (collision.platform) {
                     const platformY = collision.platform.y;
-                    if (!this.passedPlatformYs.has(platformY)) {
-                        this.passedPlatformYs.add(platformY);
-                        this.score += 1;
+                    if (this.addScoreForPlatform(platformY)) {
                         this.updateScoreDisplay();
                     }
                 }
@@ -224,9 +303,7 @@ export class Game {
                     this.ball.bounce();
                     if (collision.platform) {
                         const platformY = collision.platform.y;
-                        if (!this.passedPlatformYs.has(platformY)) {
-                            this.passedPlatformYs.add(platformY);
-                            this.score += 1;
+                        if (this.addScoreForPlatform(platformY)) {
                             this.updateScoreDisplay();
                         }
                     }
@@ -240,6 +317,9 @@ export class Game {
             case 'pass':
                 if (collision.platform) {
                     const passPlatformY = collision.platform.y;
+                    if (this.addScoreForPlatform(passPlatformY)) {
+                        this.updateScoreDisplay();
+                    }
                     if (!this.passStreakPlatformYs.has(passPlatformY)) {
                         this.passStreakPlatformYs.add(passPlatformY);
                         this.passStreakCount += 1;
@@ -253,6 +333,13 @@ export class Game {
         }
 
         // 배경색 부드러운 전환
+        this.scoreSkippedPasses(
+            previousBallY,
+            currentBallY,
+            platforms,
+            collision.type,
+            collision.platform
+        );
         this.updateBackgroundColor();
     }
 
@@ -361,6 +448,8 @@ export class Game {
     }
 
     private emitPassBurstEffect(streak: number): void {
+        if (this.particleIntensity <= 0) return;
+
         const now = Date.now();
         if (now - this.lastBurstAtMs < 30) return;
         this.lastBurstAtMs = now;
@@ -372,7 +461,9 @@ export class Game {
         const centerX = rect.left + (projected.x + 1) * 0.5 * rect.width;
         const centerY = rect.top + (1 - (projected.y + 1) * 0.5) * rect.height;
 
-        const particleCount = Math.min(108, 42 + streak * 12);
+        const baseParticleCount = Math.min(108, 42 + streak * 12);
+        const particleCount = Math.max(0, Math.round(baseParticleCount * this.particleIntensity));
+        if (particleCount <= 0) return;
         const saturation = 88;
 
         for (let i = 0; i < particleCount; i++) {

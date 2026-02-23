@@ -1,10 +1,13 @@
 import { Game } from './game/Game';
+import { GAME_CONFIG } from './config/gameConfig';
 
 const RESTART_COMBO = ['q', 'e', 'q', 'e', 'q', 'e'] as const;
 const RESTART_AFTER_COMBO_DELAY_MS = 500;
 
 const BASE_BG = { r: 0.94, g: 0.95, b: 0.96 };
 const TARGET_BG = { r: 200 / 255, g: 0, b: 0 };
+const TUNING_MIN_PERCENT = 80;
+const TUNING_MAX_PERCENT = 129;
 
 document.addEventListener('DOMContentLoaded', () => {
     const humanCanvas = document.getElementById('human-canvas') as HTMLCanvasElement;
@@ -24,6 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const difficultyValue = document.getElementById('difficulty-value');
     const scoreGapSlider = document.getElementById('score-gap-threshold') as HTMLInputElement;
     const scoreGapValue = document.getElementById('score-gap-value');
+    const particleSlider = document.getElementById('particle-intensity') as HTMLInputElement;
+    const particleValue = document.getElementById('particle-intensity-value');
+    const rotationScaleSlider = document.getElementById('rotation-scale') as HTMLInputElement;
+    const rotationScaleValue = document.getElementById('rotation-scale-value');
+    const gravityScaleSlider = document.getElementById('gravity-scale') as HTMLInputElement;
+    const gravityScaleValue = document.getElementById('gravity-scale-value');
+    const bounceScaleSlider = document.getElementById('bounce-scale') as HTMLInputElement;
+    const bounceScaleValue = document.getElementById('bounce-scale-value');
     const darkenOverlay = document.getElementById('reset-darken-overlay') as HTMLElement | null;
 
     const humanGameOverCard = document.getElementById('human-game-over');
@@ -36,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPlaying = false;
     let isRoundFrozen = false;
     let opponentBandVisibleLatch = false;
-    let scoreGapWinThreshold = 5;
+    let scoreGapWinThreshold = 10;
 
     let restartComboIndex = 0;
     let restartSequenceLocked = false;
@@ -54,8 +65,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getScoreGapThreshold = (): number => {
         const raw = parseInt(scoreGapSlider.value, 10);
-        if (Number.isNaN(raw)) return 5;
+        if (Number.isNaN(raw)) return 10;
         return Math.max(4, Math.min(10, raw));
+    };
+
+    const getPercentValue = (
+        slider: HTMLInputElement | null,
+        min: number,
+        max: number,
+        fallback: number
+    ): number => {
+        if (!slider) return fallback;
+        const raw = parseInt(slider.value, 10);
+        if (Number.isNaN(raw)) return fallback;
+        return Math.max(min, Math.min(max, raw));
+    };
+
+    const getParticleIntensity = (): number => {
+        return getPercentValue(particleSlider, 0, 100, 50) / 100;
+    };
+
+    const getRotationSpeed = (): number => {
+        const scale = getPercentValue(rotationScaleSlider, TUNING_MIN_PERCENT, TUNING_MAX_PERCENT, 100) / 100;
+        return GAME_CONFIG.controls.rotationSpeed * scale;
+    };
+
+    const getGravity = (): number => {
+        const scale = getPercentValue(gravityScaleSlider, TUNING_MIN_PERCENT, TUNING_MAX_PERCENT, 100) / 100;
+        return GAME_CONFIG.physics.gravity * scale;
+    };
+
+    const getBounceVelocity = (): number => {
+        const scale = getPercentValue(bounceScaleSlider, TUNING_MIN_PERCENT, TUNING_MAX_PERCENT, 100) / 100;
+        return GAME_CONFIG.physics.bounceVelocity * scale;
+    };
+
+    const updateParticleLabel = (): void => {
+        if (!particleValue) return;
+        const percent = getPercentValue(particleSlider, 0, 100, 50);
+        particleValue.textContent = `${percent}%`;
+    };
+
+    const updateRotationLabel = (): void => {
+        if (!rotationScaleValue) return;
+        const percent = getPercentValue(rotationScaleSlider, TUNING_MIN_PERCENT, TUNING_MAX_PERCENT, 100);
+        rotationScaleValue.textContent = `${percent}% (${getRotationSpeed().toFixed(4)})`;
+    };
+
+    const updateGravityLabel = (): void => {
+        if (!gravityScaleValue) return;
+        const percent = getPercentValue(gravityScaleSlider, TUNING_MIN_PERCENT, TUNING_MAX_PERCENT, 100);
+        gravityScaleValue.textContent = `${percent}% (${getGravity().toFixed(5)})`;
+    };
+
+    const updateBounceLabel = (): void => {
+        if (!bounceScaleValue) return;
+        const percent = getPercentValue(bounceScaleSlider, TUNING_MIN_PERCENT, TUNING_MAX_PERCENT, 100);
+        bounceScaleValue.textContent = `${percent}% (${getBounceVelocity().toFixed(4)})`;
     };
 
     const applyDarkenProgress = (): void => {
@@ -107,6 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
             gameOverElementId: 'human-game-over',
             layoutSeed,
             showOpponentLayerBand: true,
+            rotationSpeed: getRotationSpeed(),
+            gravity: getGravity(),
+            bounceVelocity: getBounceVelocity(),
+            particleIntensity: getParticleIntensity(),
         });
 
         aiGame = new Game(aiCanvas, {
@@ -115,6 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
             gameOverElementId: 'ai-game-over',
             layoutSeed,
             showOpponentLayerBand: false,
+            rotationSpeed: getRotationSpeed(),
+            gravity: getGravity(),
+            bounceVelocity: getBounceVelocity(),
+            particleIntensity: getParticleIntensity(),
         });
 
         aiGame.setAIDifficulty(getDifficulty());
@@ -200,8 +274,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (particleSlider) {
+        particleSlider.addEventListener('input', updateParticleLabel);
+    }
+    if (rotationScaleSlider) {
+        rotationScaleSlider.addEventListener('input', updateRotationLabel);
+    }
+    if (gravityScaleSlider) {
+        gravityScaleSlider.addEventListener('input', updateGravityLabel);
+    }
+    if (bounceScaleSlider) {
+        bounceScaleSlider.addEventListener('input', updateBounceLabel);
+    }
+
+    updateParticleLabel();
+    updateRotationLabel();
+    updateGravityLabel();
+    updateBounceLabel();
+
     if (startBtn && startScreen) {
         startBtn.addEventListener('click', () => {
+            createGames(currentLayoutSeed);
+            resetRoundUI();
             startScreen.style.display = 'none';
             isPlaying = true;
             isRoundFrozen = false;
