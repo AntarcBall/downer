@@ -1,7 +1,7 @@
 import { Game } from './game/Game';
 
-const RESTART_HOLD_MS = 1000;
-const RESTART_START_DELAY_MS = 1000;
+const RESTART_COMBO = ['q', 'e', 'q', 'e', 'q', 'e'] as const;
+const RESTART_AFTER_COMBO_DELAY_MS = 500;
 
 const BASE_BG = { r: 0.94, g: 0.95, b: 0.96 };
 const TARGET_BG = { r: 200 / 255, g: 0, b: 0 };
@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startBtn = document.getElementById('start-btn');
     const difficultySlider = document.getElementById('ai-difficulty') as HTMLInputElement;
     const difficultyValue = document.getElementById('difficulty-value');
+    const darkenOverlay = document.getElementById('reset-darken-overlay') as HTMLElement | null;
 
     const humanGameOverCard = document.getElementById('human-game-over');
     const aiGameOverCard = document.getElementById('ai-game-over');
@@ -32,11 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isPlaying = false;
     let isRoundFrozen = false;
-    let roundStartDelayUntil: number | null = null;
 
-    let isQHeld = false;
-    let isEHeld = false;
-    let restartHoldStartedAt: number | null = null;
+    let restartComboIndex = 0;
+    let restartSequenceLocked = false;
 
     const setCardState = (el: HTMLElement | null, state: 'neutral' | 'win' | 'lose'): void => {
         if (!el) return;
@@ -47,6 +46,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getDifficulty = (): number => {
         return Math.max(0, Math.min(1, parseInt(difficultySlider.value, 10) / 100));
+    };
+
+    const applyDarkenProgress = (): void => {
+        if (!darkenOverlay) return;
+        const progress = restartComboIndex / RESTART_COMBO.length;
+        darkenOverlay.style.opacity = String(progress * 0.85);
+    };
+
+    const resetRestartCombo = (): void => {
+        restartComboIndex = 0;
+        restartSequenceLocked = false;
+        if (darkenOverlay) {
+            darkenOverlay.style.opacity = '0';
+        }
     };
 
     const resetRoundUI = (): void => {
@@ -107,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isRoundFrozen = true;
         isPlaying = false;
-        restartHoldStartedAt = null;
+        resetRestartCombo();
 
         humanGame.forceGameOver(humanMessage);
         aiGame.forceGameOver(aiMessage);
@@ -122,49 +135,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isRoundFrozen = false;
         isPlaying = true;
-        roundStartDelayUntil = Date.now() + RESTART_START_DELAY_MS;
-        restartHoldStartedAt = null;
+        resetRestartCombo();
     };
 
-    const updateRestartHold = (): void => {
-        if (!isRoundFrozen) {
-            restartHoldStartedAt = null;
+    const handleRestartComboKey = (key: string): void => {
+        if (!isRoundFrozen || restartSequenceLocked) return;
+        if (key !== 'q' && key !== 'e') return;
+
+        const expectedKey = RESTART_COMBO[restartComboIndex];
+        if (key === expectedKey) {
+            restartComboIndex += 1;
+            applyDarkenProgress();
+
+            if (restartComboIndex >= RESTART_COMBO.length) {
+                restartSequenceLocked = true;
+
+                // After full combo, restore brightness first, then restart.
+                if (darkenOverlay) {
+                    darkenOverlay.style.opacity = '0';
+                }
+
+                window.setTimeout(() => {
+                    restartRound();
+                }, RESTART_AFTER_COMBO_DELAY_MS);
+            }
             return;
         }
 
-        if (!isQHeld || !isEHeld) {
-            restartHoldStartedAt = null;
-            return;
-        }
-
-        if (restartHoldStartedAt === null) {
-            restartHoldStartedAt = Date.now();
-            return;
-        }
-
-        if (Date.now() - restartHoldStartedAt >= RESTART_HOLD_MS) {
-            restartRound();
-        }
+        restartComboIndex = key === RESTART_COMBO[0] ? 1 : 0;
+        applyDarkenProgress();
     };
 
     window.addEventListener('keydown', (e) => {
-        const key = e.key.toLowerCase();
-        if (key === 'q') isQHeld = true;
-        if (key === 'e') isEHeld = true;
-    });
-
-    window.addEventListener('keyup', (e) => {
-        const key = e.key.toLowerCase();
-        if (key === 'q') isQHeld = false;
-        if (key === 'e') isEHeld = false;
-
-        if (!isQHeld || !isEHeld) {
-            restartHoldStartedAt = null;
-        }
+        if (e.repeat) return;
+        handleRestartComboKey(e.key.toLowerCase());
     });
 
     createGames(currentLayoutSeed);
     resetRoundUI();
+    resetRestartCombo();
 
     if (difficultySlider && difficultyValue) {
         difficultySlider.addEventListener('input', () => {
@@ -178,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
             startScreen.style.display = 'none';
             isPlaying = true;
             isRoundFrozen = false;
-            roundStartDelayUntil = null;
             aiGame.setAIDifficulty(getDifficulty());
         });
     }
@@ -186,18 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const animate = () => {
         requestAnimationFrame(animate);
 
-        updateRestartHold();
-
         if (isPlaying && !isRoundFrozen) {
-            if (roundStartDelayUntil !== null) {
-                if (Date.now() < roundStartDelayUntil) {
-                    humanGame.render();
-                    aiGame.render();
-                    return;
-                }
-                roundStartDelayUntil = null;
-            }
-
             humanGame.update();
             aiGame.update();
 

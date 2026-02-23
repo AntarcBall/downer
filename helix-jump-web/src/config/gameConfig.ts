@@ -8,13 +8,13 @@ export interface PlatformDifficultyBand {
 
 export const GAME_CONFIG = {
     physics: {
-        gravity: -0.0025,
+        gravity: -0.0035,
         bounceVelocity: 0.09,
         ballRadius: 0.5,
         ballZ: 1.5,
     },
     controls: {
-        rotationSpeed: 0.04,
+        rotationSpeed: 0.06,
     },
     platforms: {
         initialGapCenter: 45,

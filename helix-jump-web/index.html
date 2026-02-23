@@ -55,6 +55,16 @@
       background-size: 32px 32px;
     }
 
+    .reset-darken-overlay {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 900;
+      transition: opacity 0.2s linear;
+    }
+
     #app-shell {
       display: flex;
       flex-direction: column;
@@ -368,6 +378,7 @@
     </div>
     <button id="start-btn" class="start-btn">GAME START</button>
   </div>
+  <div id="reset-darken-overlay" class="reset-darken-overlay"></div>
 
   <div id="app-shell">
     <img class="app-logo" src="/src/data/logo.png" alt="Helix Jump Logo" />
@@ -411,7 +422,7 @@
     </section>
 
     <div class="controls-info">
-      Controls: <kbd>Q</kbd> rotate left / <kbd>E</kbd> rotate right
+      Controls: <kbd>Q</kbd> rotate left / <kbd>E</kbd> rotate right | Game Over Reset: Q-E-Q-E-Q-E
     </div>
   </div>
 

@@ -14,6 +14,7 @@ export interface GameOptions {
 }
 
 export class Game {
+    private readonly canvas: HTMLCanvasElement;
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
@@ -31,6 +32,9 @@ export class Game {
     private score: number = 0;
     private isGameOver: boolean = false;
     private passedPlatformYs: Set<number> = new Set();
+    private passStreakCount: number = 0;
+    private passStreakPlatformYs: Set<number> = new Set();
+    private lastBurstAtMs: number = 0;
 
     private isAI: boolean;
     private scoreElementId: string;
@@ -53,6 +57,7 @@ export class Game {
     };
 
     constructor(canvas: HTMLCanvasElement, options: GameOptions = {}) {
+        this.canvas = canvas;
         this.isAI = options.isAI || false;
         this.scoreElementId = options.scoreElementId || 'score-value';
         this.gameOverElementId = options.gameOverElementId || 'game-over-ui';
@@ -185,6 +190,8 @@ export class Game {
 
         switch (collision.type) {
             case 'bounce':
+                this.passStreakCount = 0;
+                this.passStreakPlatformYs.clear();
                 this.ball.bounce();
                 if (collision.platform) {
                     const platformY = collision.platform.y;
@@ -197,6 +204,8 @@ export class Game {
                 break;
 
             case 'trap':
+                this.passStreakCount = 0;
+                this.passStreakPlatformYs.clear();
                 if (this.isAI && this.score < 10) {
                     this.ball.bounce();
                     if (collision.platform) {
@@ -215,6 +224,17 @@ export class Game {
                 break;
 
             case 'pass':
+                if (collision.platform) {
+                    const passPlatformY = collision.platform.y;
+                    if (!this.passStreakPlatformYs.has(passPlatformY)) {
+                        this.passStreakPlatformYs.add(passPlatformY);
+                        this.passStreakCount += 1;
+
+                        if (this.passStreakCount >= 3) {
+                            this.emitPassBurstEffect(this.passStreakCount);
+                        }
+                    }
+                }
                 break;
         }
 
@@ -287,6 +307,87 @@ export class Game {
         if (this.aiController) {
             this.aiController.setDifficulty(value);
         }
+    }
+
+    private emitPassBurstEffect(streak: number): void {
+        const now = Date.now();
+        if (now - this.lastBurstAtMs < 30) return;
+        this.lastBurstAtMs = now;
+
+        const rect = this.canvas.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+
+        const projected = this.ball.mesh.position.clone().project(this.camera);
+        const centerX = rect.left + (projected.x + 1) * 0.5 * rect.width;
+        const centerY = rect.top + (1 - (projected.y + 1) * 0.5) * rect.height;
+
+        const particleCount = Math.min(72, 28 + streak * 9);
+        const saturation = 88;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            const size = 3 + Math.random() * 7;
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 30 + Math.random() * 110;
+            const dx = Math.cos(angle) * distance;
+            const dy = Math.sin(angle) * distance;
+            const duration = (320 + Math.random() * 320) * 1.3;
+            const hue = Math.floor(Math.random() * 360);
+            const lightness = 56 + Math.random() * 16;
+            const particleColor = `hsl(${hue} ${saturation}% ${lightness}%)`;
+
+            particle.style.position = 'fixed';
+            particle.style.left = `${centerX}px`;
+            particle.style.top = `${centerY}px`;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.borderRadius = '50%';
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '1200';
+            particle.style.background = particleColor;
+            particle.style.boxShadow = `0 0 12px hsl(${hue} ${saturation}% 70% / 0.85)`;
+            particle.style.transform = 'translate(-50%, -50%) scale(1)';
+            particle.style.opacity = '1';
+
+            document.body.appendChild(particle);
+
+            const animation = particle.animate(
+                [
+                    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2)`, opacity: 0 }
+                ],
+                {
+                    duration,
+                    easing: 'cubic-bezier(0.15, 0.75, 0.2, 1)',
+                    fill: 'forwards'
+                }
+            );
+            animation.onfinish = () => particle.remove();
+        }
+
+        const ring = document.createElement('div');
+        ring.style.position = 'fixed';
+        ring.style.left = `${centerX}px`;
+        ring.style.top = `${centerY}px`;
+        ring.style.width = '12px';
+        ring.style.height = '12px';
+        const ringHue = Math.floor(Math.random() * 360);
+        ring.style.border = `2px solid hsl(${ringHue} ${saturation}% 70% / 0.95)`;
+        ring.style.borderRadius = '999px';
+        ring.style.pointerEvents = 'none';
+        ring.style.zIndex = '1199';
+        ring.style.transform = 'translate(-50%, -50%) scale(1)';
+        ring.style.opacity = '0.95';
+        document.body.appendChild(ring);
+
+        const ringAnim = ring.animate(
+            [
+                { transform: 'translate(-50%, -50%) scale(1)', opacity: 0.95 },
+                { transform: 'translate(-50%, -50%) scale(9)', opacity: 0 }
+            ],
+            { duration: 468, easing: 'ease-out', fill: 'forwards' }
+        );
+        ringAnim.onfinish = () => ring.remove();
     }
 
     dispose(): void {
