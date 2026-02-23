@@ -321,17 +321,17 @@ export class Game {
         const centerX = rect.left + (projected.x + 1) * 0.5 * rect.width;
         const centerY = rect.top + (1 - (projected.y + 1) * 0.5) * rect.height;
 
-        const particleCount = Math.min(72, 28 + streak * 9);
+        const particleCount = Math.min(108, 42 + streak * 12);
         const saturation = 88;
 
         for (let i = 0; i < particleCount; i++) {
             const particle = document.createElement('div');
-            const size = 3 + Math.random() * 7;
+            const size = 4 + Math.random() * 11;
             const angle = Math.random() * Math.PI * 2;
-            const distance = 30 + Math.random() * 110;
+            const distance = 50 + Math.random() * 180;
             const dx = Math.cos(angle) * distance;
             const dy = Math.sin(angle) * distance;
-            const duration = (320 + Math.random() * 320) * 1.3;
+            const duration = (420 + Math.random() * 420) * 1.25;
             const hue = Math.floor(Math.random() * 360);
             const lightness = 56 + Math.random() * 16;
             const particleColor = `hsl(${hue} ${saturation}% ${lightness}%)`;
@@ -345,7 +345,7 @@ export class Game {
             particle.style.pointerEvents = 'none';
             particle.style.zIndex = '1200';
             particle.style.background = particleColor;
-            particle.style.boxShadow = `0 0 12px hsl(${hue} ${saturation}% 70% / 0.85)`;
+            particle.style.boxShadow = `0 0 20px hsl(${hue} ${saturation}% 72% / 0.9)`;
             particle.style.transform = 'translate(-50%, -50%) scale(1)';
             particle.style.opacity = '1';
 
@@ -354,7 +354,8 @@ export class Game {
             const animation = particle.animate(
                 [
                     { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
-                    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2)`, opacity: 0 }
+                    { transform: `translate(calc(-50% + ${dx * 0.7}px), calc(-50% + ${dy * 0.7}px)) scale(0.55)`, opacity: 0.75 },
+                    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.12)`, opacity: 0 }
                 ],
                 {
                     duration,
@@ -369,10 +370,10 @@ export class Game {
         ring.style.position = 'fixed';
         ring.style.left = `${centerX}px`;
         ring.style.top = `${centerY}px`;
-        ring.style.width = '12px';
-        ring.style.height = '12px';
+        ring.style.width = '18px';
+        ring.style.height = '18px';
         const ringHue = Math.floor(Math.random() * 360);
-        ring.style.border = `2px solid hsl(${ringHue} ${saturation}% 70% / 0.95)`;
+        ring.style.border = `3px solid hsl(${ringHue} ${saturation}% 72% / 0.95)`;
         ring.style.borderRadius = '999px';
         ring.style.pointerEvents = 'none';
         ring.style.zIndex = '1199';
@@ -383,11 +384,36 @@ export class Game {
         const ringAnim = ring.animate(
             [
                 { transform: 'translate(-50%, -50%) scale(1)', opacity: 0.95 },
-                { transform: 'translate(-50%, -50%) scale(9)', opacity: 0 }
+                { transform: 'translate(-50%, -50%) scale(14)', opacity: 0 }
             ],
-            { duration: 468, easing: 'ease-out', fill: 'forwards' }
+            { duration: 620, easing: 'ease-out', fill: 'forwards' }
         );
         ringAnim.onfinish = () => ring.remove();
+
+        const ring2 = document.createElement('div');
+        ring2.style.position = 'fixed';
+        ring2.style.left = `${centerX}px`;
+        ring2.style.top = `${centerY}px`;
+        ring2.style.width = '12px';
+        ring2.style.height = '12px';
+        const ringHue2 = Math.floor(Math.random() * 360);
+        ring2.style.border = `2px solid hsl(${ringHue2} ${saturation}% 75% / 0.85)`;
+        ring2.style.borderRadius = '999px';
+        ring2.style.pointerEvents = 'none';
+        ring2.style.zIndex = '1198';
+        ring2.style.transform = 'translate(-50%, -50%) scale(1)';
+        ring2.style.opacity = '0';
+        document.body.appendChild(ring2);
+
+        const ring2Anim = ring2.animate(
+            [
+                { transform: 'translate(-50%, -50%) scale(1)', opacity: 0 },
+                { transform: 'translate(-50%, -50%) scale(1.6)', opacity: 0.9, offset: 0.2 },
+                { transform: 'translate(-50%, -50%) scale(18)', opacity: 0 }
+            ],
+            { duration: 760, easing: 'ease-out', fill: 'forwards' }
+        );
+        ring2Anim.onfinish = () => ring2.remove();
     }
 
     dispose(): void {
