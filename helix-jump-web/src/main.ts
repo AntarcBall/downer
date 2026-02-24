@@ -5,7 +5,8 @@ const RESTART_COMBO = ['q', 'e', 'q', 'e', 'q', 'e'] as const;
 const RESTART_AFTER_COMBO_DELAY_MS = 500;
 
 const BASE_BG = { r: 0.94, g: 0.95, b: 0.96 };
-const TARGET_BG = { r: 200 / 255, g: 0, b: 0 };
+const TARGET_BG_WIN = { r: 0, g: 200 / 255, b: 0 };
+const TARGET_BG_LOSE = { r: 200 / 255, g: 0, b: 0 };
 const TUNING_MIN_PERCENT = 80;
 const TUNING_MAX_PERCENT = 129;
 
@@ -343,16 +344,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const maxDiff = scoreGapWinThreshold;
                 const ratio = Math.min(Math.abs(diff) / maxDiff, 1.0);
 
-                const currentR = BASE_BG.r + (TARGET_BG.r - BASE_BG.r) * ratio;
-                const currentG = BASE_BG.g + (TARGET_BG.g - BASE_BG.g) * ratio;
-                const currentB = BASE_BG.b + (TARGET_BG.b - BASE_BG.b) * ratio;
+                const winR = BASE_BG.r + (TARGET_BG_WIN.r - BASE_BG.r) * ratio;
+                const winG = BASE_BG.g + (TARGET_BG_WIN.g - BASE_BG.g) * ratio;
+                const winB = BASE_BG.b + (TARGET_BG_WIN.b - BASE_BG.b) * ratio;
+                const loseR = BASE_BG.r + (TARGET_BG_LOSE.r - BASE_BG.r) * ratio;
+                const loseG = BASE_BG.g + (TARGET_BG_LOSE.g - BASE_BG.g) * ratio;
+                const loseB = BASE_BG.b + (TARGET_BG_LOSE.b - BASE_BG.b) * ratio;
 
                 if (diff > 0) {
-                    aiGame.setTargetBackgroundColor(currentR, currentG, currentB);
-                    humanGame.setTargetBackgroundColor(BASE_BG.r, BASE_BG.g, BASE_BG.b);
+                    humanGame.setTargetBackgroundColor(winR, winG, winB);
+                    aiGame.setTargetBackgroundColor(loseR, loseG, loseB);
                 } else if (diff < 0) {
-                    humanGame.setTargetBackgroundColor(currentR, currentG, currentB);
-                    aiGame.setTargetBackgroundColor(BASE_BG.r, BASE_BG.g, BASE_BG.b);
+                    aiGame.setTargetBackgroundColor(winR, winG, winB);
+                    humanGame.setTargetBackgroundColor(loseR, loseG, loseB);
                 } else {
                     humanGame.setTargetBackgroundColor(BASE_BG.r, BASE_BG.g, BASE_BG.b);
                     aiGame.setTargetBackgroundColor(BASE_BG.r, BASE_BG.g, BASE_BG.b);
