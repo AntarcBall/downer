@@ -299,7 +299,7 @@ export class Game {
             case 'trap':
                 this.passStreakCount = 0;
                 this.passStreakPlatformYs.clear();
-                if (this.isAI && this.score < 20) {
+                if (this.isAI && this.score < 25) {
                     this.ball.bounce();
                     if (collision.platform) {
                         const platformY = collision.platform.y;
